@@ -1,0 +1,5 @@
+2026/05/24 12:37:28 Server starting on :8080
+2026/05/24 12:37:28 Environment: development
+2026/05/24 12:37:28 MongoDB URI: mongodb+srv://rajmoorthy:moorthy2005@studentanalyzer.9frmifs.mongodb.net/?appName=studentanalyzer
+2026/05/24 12:37:28 Server failed to start: listen tcp :8080: bind: Only one usage of each socket address (protocol/network address/port) is normally permitted.
+exit status 1
