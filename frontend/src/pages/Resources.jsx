@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+
 const SUBJECT_OPTIONS = [
   'Mathematics', 'Physics', 'Chemistry', 'Computer Science',
   'Biology', 'English', 'History', 'Economics', 'Geography',
@@ -13,6 +15,239 @@ const DOMAIN_OPTIONS = [
   'Problem Solving', 'Exam Preparation', 'Lab / Practical',
 ];
 
+// ─── Curated Blog Articles ──────────────────────────────────────────────────
+const BLOG_ARTICLES = [
+  {
+    id: 'b1',
+    title: 'How to Build a Study Schedule That Actually Works',
+    author: 'Ali Abdaal',
+    source: 'aliabdaal.com',
+    url: 'https://aliabdaal.com/how-to-study/',
+    description: 'Evidence-backed strategies for creating a sustainable, effective study schedule based on spaced repetition and active recall.',
+    category: 'Study Skills',
+    readTime: '7 min read',
+    emoji: '📅',
+  },
+  {
+    id: 'b2',
+    title: 'The Feynman Technique: The Best Way to Learn Anything',
+    author: 'James Clear',
+    source: 'fs.blog',
+    url: 'https://fs.blog/feynman-technique/',
+    description: 'Nobel Prize-winning physicist Richard Feynman\'s method for understanding complex concepts by simplifying them to basics.',
+    category: 'Learning Methods',
+    readTime: '6 min read',
+    emoji: '🧠',
+  },
+  {
+    id: 'b3',
+    title: 'Khan Academy Blog — Study Tips for Exam Season',
+    author: 'Khan Academy',
+    source: 'blog.khanacademy.org',
+    url: 'https://blog.khanacademy.org/',
+    description: 'Practical exam preparation advice from Khan Academy educators, including time management and stress reduction techniques.',
+    category: 'Exam Prep',
+    readTime: '5 min read',
+    emoji: '📝',
+  },
+  {
+    id: 'b4',
+    title: 'MIT OpenCourseWare: Free Learning from the World\'s Best',
+    author: 'MIT OCW Team',
+    source: 'ocw.mit.edu',
+    url: 'https://ocw.mit.edu/',
+    description: 'Access world-class MIT course materials in engineering, science, math, and humanities — completely free of charge.',
+    category: 'Free Courses',
+    readTime: 'Course Library',
+    emoji: '🎓',
+  },
+  {
+    id: 'b5',
+    title: 'How to Take Smart Notes: The Zettelkasten Method',
+    author: 'Forte Labs',
+    source: 'fortelabs.com',
+    url: 'https://fortelabs.com/blog/basboverview/',
+    description: 'Learn the Zettelkasten note-taking system used by prolific academics to build a personal knowledge base.',
+    category: 'Productivity',
+    readTime: '10 min read',
+    emoji: '🗂️',
+  },
+  {
+    id: 'b6',
+    title: 'The Science of Sleep and Studying',
+    author: 'Huberman Lab',
+    source: 'hubermanlab.com',
+    url: 'https://www.hubermanlab.com/newsletter/master-your-sleep-and-be-more-alert-when-awake',
+    description: 'Neuroscience-backed research on how sleep consolidates memory and why a proper sleep schedule supercharges learning.',
+    category: 'Health & Focus',
+    readTime: '8 min read',
+    emoji: '😴',
+  },
+];
+
+// ─── Share Resource Modal ───────────────────────────────────────────────────
+const ShareModal = ({ resource, onClose, user }) => {
+  const [toEmail, setToEmail] = useState('');
+  const [note, setNote] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState('');
+
+  const handleSend = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE}/collaborate/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          fromEmail: user?.email || '',
+          toEmail,
+          resourceTitle: resource?.title || 'Study Resource',
+          resourceURL: resource?.url || '',
+          note,
+          senderName: user?.firstName || user?.username || 'A classmate',
+        }),
+      });
+      if (!res.ok) throw new Error('Failed to send');
+      setStatus('✅ Resource shared successfully!');
+      setToEmail('');
+      setNote('');
+    } catch {
+      setStatus('❌ Failed to send. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-card glassmorphism" onClick={e => e.stopPropagation()}>
+        <button className="modal-close-btn" onClick={onClose}>✕</button>
+        <div className="modal-header">
+          <span className="modal-icon">🤝</span>
+          <h2>Share with a Classmate</h2>
+          <p>Send <strong>{resource?.title}</strong> to a peer via email.</p>
+        </div>
+        {status && <div className={`alert ${status.startsWith('✅') ? 'alert-success' : 'alert-error'}`}>{status}</div>}
+        <form onSubmit={handleSend} className="auth-form">
+          <div className="form-group">
+            <label htmlFor="share-email">Recipient Email</label>
+            <div className="input-wrapper">
+              <span className="input-icon">📧</span>
+              <input
+                id="share-email"
+                type="email"
+                value={toEmail}
+                onChange={e => setToEmail(e.target.value)}
+                placeholder="classmate@university.edu"
+                required
+              />
+            </div>
+          </div>
+          <div className="form-group">
+            <label htmlFor="share-note">Personal Note (optional)</label>
+            <textarea
+              id="share-note"
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              placeholder="This video helped me a lot with the exam!"
+              rows={3}
+              style={{ width: '100%', resize: 'vertical' }}
+            />
+          </div>
+          <button type="submit" className="btn-primary auth-btn" disabled={loading}>
+            {loading ? 'Sending…' : '📤 Send Resource'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// Helper to check if a URL is a YouTube link
+const isYouTubeUrl = (url) => {
+  return url && (url.includes('youtube.com') || url.includes('youtu.be') || url.includes('youtube-nocookie.com'));
+};
+
+// Helper to construct a strict YouTube watch URL from video objects
+const getYouTubeUrl = (video) => {
+  if (!video) return '#';
+  if (video.id && (video.id.startsWith('http') || video.id.includes('youtube.com') || video.id.includes('youtu.be'))) {
+    return video.id;
+  }
+  if (video.url && (video.url.includes('youtube.com') || video.url.includes('youtu.be'))) {
+    return video.url;
+  }
+  const cleanId = video.id ? video.id.trim() : '';
+  return `https://www.youtube.com/watch?v=${cleanId}`;
+};
+
+// ─── Received Resources Panel ───────────────────────────────────────────────
+const ReceivedPanel = () => {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_BASE}/collaborate/received`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setItems(data || []);
+        }
+      } catch {
+        setItems([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  if (loading) return <div className="res-loader"><div className="res-loader-spinner" /><span>Loading shared resources…</span></div>;
+  if (items.length === 0) return (
+    <div className="res-empty">
+      <div className="res-empty-icon">📭</div>
+      <h3>No shared resources yet</h3>
+      <p>Resources shared by classmates will appear here.</p>
+    </div>
+  );
+
+  return (
+    <div className="received-grid">
+      {items.map((item, i) => {
+        const isYT = isYouTubeUrl(item.resource_url);
+        return (
+          <div key={i} className="received-card glassmorphism">
+            <div className="received-card-header">
+              <span className="received-icon">{isYT ? '📺' : '📚'}</span>
+              <div>
+                <h4>{item.resource_title || 'Study Resource'}</h4>
+                <span className="received-from">From: {item.from_email}</span>
+              </div>
+            </div>
+            {item.note && <p className="received-note">"{item.note}"</p>}
+            <a
+              href={item.resource_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={isYT ? "btn-primary res-watch-btn" : "btn-secondary res-watch-btn"}
+              style={{ marginTop: '12px', display: 'inline-block' }}
+            >
+              {isYT ? '▶ Watch on YouTube' : '📖 Open Reference'}
+            </a>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+// ─── Main Resources Component ───────────────────────────────────────────────
 const Resources = () => {
   const { user } = useAuth();
   const [youtubeVideos, setYoutubeVideos] = useState([]);
@@ -20,10 +255,11 @@ const Resources = () => {
   const [domain, setDomain]       = useState('');
   const [level, setLevel]         = useState('');
   const [customQuery, setCustomQuery] = useState('');
-
   const [loading, setLoading]     = useState(false);
   const [searched, setSearched]   = useState(false);
   const [error, setError]         = useState('');
+  const [activeTab, setActiveTab] = useState('videos'); // 'videos' | 'blogs' | 'shared'
+  const [shareModal, setShareModal] = useState(null); // resource object
 
   /* ── fetch from backend ── */
   const fetchVideos = useCallback(async (query) => {
@@ -34,7 +270,7 @@ const Resources = () => {
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'}/resources/search?q=${encodeURIComponent(query + ' english high quality')}`,
+        `${API_BASE}/resources/search?q=${encodeURIComponent(query + ' english high quality')}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (!res.ok) throw new Error('Failed to retrieve videos');
@@ -80,12 +316,19 @@ const Resources = () => {
 
   return (
     <div className="resources-container fade-in">
+      {shareModal && (
+        <ShareModal
+          resource={shareModal}
+          user={user}
+          onClose={() => setShareModal(null)}
+        />
+      )}
 
       {/* ── Hero Search Panel ── */}
       <div className="res-hero glassmorphism">
         <div className="res-hero-text">
-          <h2>🔍 Discover Free Video Lectures</h2>
-          <p>Choose your subject and domain to find the highest-viewed, English-language educational content from YouTube.</p>
+          <h2>🔍 Discover Free Learning Resources</h2>
+          <p>Find top-rated YouTube lectures, curated blogs, and receive resources from classmates — all in one place.</p>
         </div>
 
         <form className="res-search-form" onSubmit={handleSearch}>
@@ -96,7 +339,7 @@ const Resources = () => {
               {subject === 'Custom' ? (
                 <input
                   type="text"
-                  value={customQuery} // fallback to customQuery for typing if custom
+                  value={customQuery}
                   onChange={(e) => setCustomQuery(e.target.value)}
                   placeholder="Type your subject..."
                   autoFocus
@@ -140,63 +383,156 @@ const Resources = () => {
         <div className="res-quick-tags">
           <span className="tag-label">Popular:</span>
           {['Calculus', 'Data Structures', 'Organic Chemistry', 'Physics Mechanics', 'Machine Learning', 'Study Tips'].map(tag => (
-            <button key={tag} className="tag-btn" onClick={() => handleQuickTag(tag)}>{tag}</button>
+            <button key={tag} className="tag-btn" onClick={() => { handleQuickTag(tag); setActiveTab('videos'); }}>{tag}</button>
           ))}
         </div>
       </div>
 
-      {/* ── Results ── */}
-      {error && <div className="alert alert-error">{error}</div>}
+      {/* ── Tab Row ── */}
+      <div className="res-tab-row">
+        <button
+          className={`res-tab-btn ${activeTab === 'videos' ? 'active' : ''}`}
+          onClick={() => setActiveTab('videos')}
+        >
+          📺 Video Lectures
+        </button>
+        <button
+          className={`res-tab-btn ${activeTab === 'blogs' ? 'active' : ''}`}
+          onClick={() => setActiveTab('blogs')}
+        >
+          📰 Blog Articles
+        </button>
+        <button
+          className={`res-tab-btn ${activeTab === 'shared' ? 'active' : ''}`}
+          onClick={() => setActiveTab('shared')}
+        >
+          🤝 Shared by Classmates
+        </button>
+      </div>
 
-      {loading ? (
-        <div className="res-loader">
-          <div className="res-loader-spinner" />
-          <span>Searching YouTube for top-rated educational content…</span>
-        </div>
-      ) : youtubeVideos.length > 0 ? (
+      {/* ── Videos Tab ── */}
+      {activeTab === 'videos' && (
         <>
+          {error && <div className="alert alert-error">{error}</div>}
+          {loading ? (
+            <div className="res-loader">
+              <div className="res-loader-spinner" />
+              <span>Searching YouTube for top-rated educational content…</span>
+            </div>
+          ) : youtubeVideos.length > 0 ? (
+            <>
+              <div className="res-results-header">
+                <h3>📺 Found {youtubeVideos.length} Educational Videos</h3>
+                <span className="res-results-tag">Sorted by views &amp; relevance</span>
+              </div>
+              <div className="res-video-grid">
+                {youtubeVideos.map((video, idx) => (
+                  <div
+                    className="res-video-card glassmorphism"
+                    key={video.id}
+                    style={{ animationDelay: `${idx * 70}ms` }}
+                  >
+                    <div className="res-thumb-wrap">
+                      <img src={video.thumbnail} alt={video.title} className="res-thumb-img" />
+                      <span className="res-duration-pill">{video.duration}</span>
+                    </div>
+                    <div className="res-video-body">
+                      <span className="res-channel-name">{video.channel}</span>
+                      <h4 className="res-video-title" title={video.title}>{video.title}</h4>
+                      <p className="res-video-desc">{video.description}</p>
+                      <div className="res-video-footer">
+                        <span className="res-views-badge">🔥 {video.views}</span>
+                        <div className="res-video-actions">
+                          <a
+                            href={getYouTubeUrl(video)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn-primary res-watch-btn"
+                          >
+                            ▶ Watch on YouTube
+                          </a>
+                          <button
+                            className="btn-secondary res-share-btn"
+                            onClick={() => setShareModal({ title: video.title, url: getYouTubeUrl(video) })}
+                            title="Share with classmate"
+                          >
+                            🤝 Share
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : searched ? (
+            <div className="res-empty">
+              <div className="res-empty-icon">🎓</div>
+              <h3>No matching videos found</h3>
+              <p>Try broadening your search keywords or selecting a different subject.</p>
+            </div>
+          ) : null}
+        </>
+      )}
+
+      {/* ── Blogs Tab ── */}
+      {activeTab === 'blogs' && (
+        <div className="blogs-section">
           <div className="res-results-header">
-            <h3>📺 Found {youtubeVideos.length} Educational Videos</h3>
-            <span className="res-results-tag">Sorted by views & relevance</span>
+            <h3>📰 Curated Blog Articles & Learning Resources</h3>
+            <span className="res-results-tag">Handpicked by educators</span>
           </div>
-          <div className="res-video-grid">
-            {youtubeVideos.map((video, idx) => (
+          <div className="blog-grid">
+            {BLOG_ARTICLES.map((article, idx) => (
               <div
-                className="res-video-card glassmorphism"
-                key={video.id}
-                style={{ animationDelay: `${idx * 70}ms` }}
+                key={article.id}
+                className="blog-card glassmorphism"
+                style={{ animationDelay: `${idx * 60}ms` }}
               >
-                <div className="res-thumb-wrap">
-                  <img src={video.thumbnail} alt={video.title} className="res-thumb-img" />
-                  <span className="res-duration-pill">{video.duration}</span>
+                <div className="blog-card-header">
+                  <span className="blog-emoji">{article.emoji}</span>
+                  <span className="blog-category-badge">{article.category}</span>
                 </div>
-                <div className="res-video-body">
-                  <span className="res-channel-name">{video.channel}</span>
-                  <h4 className="res-video-title" title={video.title}>{video.title}</h4>
-                  <p className="res-video-desc">{video.description}</p>
-                  <div className="res-video-footer">
-                    <span className="res-views-badge">🔥 {video.views}</span>
+                <h3 className="blog-title">{article.title}</h3>
+                <p className="blog-desc">{article.description}</p>
+                <div className="blog-footer">
+                  <div className="blog-meta">
+                    <span className="blog-author">✍️ {article.author}</span>
+                    <span className="blog-readtime">⏱ {article.readTime}</span>
+                  </div>
+                  <div className="blog-actions">
                     <a
-                      href={video.url}
+                      href={article.url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="btn-primary res-watch-btn"
                     >
-                      ▶ Watch
+                      📖 Read Article
                     </a>
+                    <button
+                      className="btn-secondary res-share-btn"
+                      onClick={() => setShareModal({ title: article.title, url: article.url })}
+                    >
+                      🤝 Share
+                    </button>
                   </div>
                 </div>
               </div>
             ))}
           </div>
-        </>
-      ) : searched ? (
-        <div className="res-empty">
-          <div className="res-empty-icon">🎓</div>
-          <h3>No matching videos found</h3>
-          <p>Try broadening your search keywords or selecting a different subject.</p>
         </div>
-      ) : null}
+      )}
+
+      {/* ── Shared Resources Tab ── */}
+      {activeTab === 'shared' && (
+        <div className="shared-section">
+          <div className="res-results-header">
+            <h3>🤝 Resources Shared by Classmates</h3>
+            <span className="res-results-tag">From your collaborators</span>
+          </div>
+          <ReceivedPanel />
+        </div>
+      )}
     </div>
   );
 };

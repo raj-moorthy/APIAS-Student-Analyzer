@@ -3,7 +3,9 @@ package controllers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"time"
 
@@ -211,4 +213,288 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 func LogoutUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"message": "Logged out successfully"})
+}
+
+// ForgotPassword — POST /api/auth/forgot-password
+// Generates a 6-digit OTP, stores it in MongoDB with 15-min expiry, and emails it.
+func ForgotPassword(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Email string `json:"email"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Email == "" {
+		http.Error(w, "Email is required", http.StatusBadRequest)
+		return
+	}
+
+	client, err := models.ConnectDB(getMongoURI())
+	if err != nil {
+		http.Error(w, "Database connection failed", http.StatusInternalServerError)
+		return
+	}
+
+	// Verify the user exists
+	usersColl := models.GetCollection(client, "users")
+	var user models.User
+	if err = usersColl.FindOne(context.Background(), bson.M{"email": body.Email}).Decode(&user); err != nil {
+		// Return 200 even if user doesn't exist to avoid email enumeration
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"message": "If the email exists, a reset code has been sent."})
+		return
+	}
+
+	// Generate 6-digit OTP
+	otp := fmt.Sprintf("%06d", rand.Intn(1000000))
+	expiry := time.Now().Add(15 * time.Minute)
+
+	// Upsert OTP record
+	resetColl := models.GetCollection(client, "password_resets")
+	resetColl.DeleteMany(context.Background(), bson.M{"email": body.Email})
+	resetColl.InsertOne(context.Background(), bson.M{
+		"email":      body.Email,
+		"otp":        otp,
+		"expires_at": expiry,
+		"created_at": time.Now(),
+	})
+
+	// Send email via existing SMTP helper
+	htmlBody := fmt.Sprintf(`
+<p>Hi <strong>%s</strong> 👋</p>
+<p>You requested a password reset for your APAIS account.</p>
+<div style="text-align:center;margin:32px 0;">
+  <div style="display:inline-block;background:linear-gradient(135deg,#4361ee,#7c3aed);border-radius:16px;padding:24px 48px;">
+    <span style="font-size:40px;font-weight:900;letter-spacing:12px;color:#fff;">%s</span>
+  </div>
+  <p style="color:#94a3b8;margin-top:12px;font-size:13px;">This code expires in <strong>15 minutes</strong>.</p>
+</div>
+<p style="color:#64748b;font-size:13px;">If you did not request a password reset, please ignore this email. Your account is secure.</p>`,
+		user.FirstName, otp)
+
+	subject := "🔐 APAIS Password Reset — Your verification code"
+	if err := sendMail(body.Email, subject, buildHTML(subject, htmlBody)); err != nil {
+		log.Printf("[ForgotPassword] email error: %v", err)
+		http.Error(w, "Failed to send reset email", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"message": "If the email exists, a reset code has been sent."})
+}
+
+// ResetPassword — POST /api/auth/reset-password
+// Verifies the OTP and updates the user's password.
+func ResetPassword(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Email       string `json:"email"`
+		OTP         string `json:"otp"`
+		NewPassword string `json:"newPassword"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Email == "" || body.OTP == "" || body.NewPassword == "" {
+		http.Error(w, "Email, OTP, and new password are required", http.StatusBadRequest)
+		return
+	}
+
+	client, err := models.ConnectDB(getMongoURI())
+	if err != nil {
+		http.Error(w, "Database connection failed", http.StatusInternalServerError)
+		return
+	}
+
+	// Verify OTP
+	resetColl := models.GetCollection(client, "password_resets")
+	var resetDoc struct {
+		Email     string    `bson:"email"`
+		OTP       string    `bson:"otp"`
+		ExpiresAt time.Time `bson:"expires_at"`
+	}
+	err = resetColl.FindOne(context.Background(), bson.M{"email": body.Email, "otp": body.OTP}).Decode(&resetDoc)
+	if err != nil {
+		http.Error(w, "Invalid or expired reset code", http.StatusUnauthorized)
+		return
+	}
+	if time.Now().After(resetDoc.ExpiresAt) {
+		resetColl.DeleteOne(context.Background(), bson.M{"email": body.Email})
+		http.Error(w, "Reset code has expired. Please request a new one.", http.StatusUnauthorized)
+		return
+	}
+
+	// Hash new password
+	hashed, err := bcrypt.GenerateFromPassword([]byte(body.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		http.Error(w, "Failed to process password", http.StatusInternalServerError)
+		return
+	}
+
+	// Update user password
+	usersColl := models.GetCollection(client, "users")
+	usersColl.UpdateOne(context.Background(),
+		bson.M{"email": body.Email},
+		bson.M{"$set": bson.M{"password": string(hashed), "updated_at": time.Now()}},
+	)
+
+	// Remove OTP record
+	resetColl.DeleteOne(context.Background(), bson.M{"email": body.Email})
+
+	log.Printf("[ResetPassword] password updated for %s", body.Email)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"message": "Password updated successfully."})
+}
+
+// CollaborateSendResource — POST /api/collaborate/send
+// Sends a study resource (title, url, note) to a peer by email.
+func CollaborateSendResource(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		FromEmail    string `json:"fromEmail"`
+		ToEmail      string `json:"toEmail"`
+		ResourceTitle string `json:"resourceTitle"`
+		ResourceURL  string `json:"resourceURL"`
+		Note         string `json:"note"`
+		SenderName   string `json:"senderName"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.ToEmail == "" {
+		http.Error(w, "Invalid payload", http.StatusBadRequest)
+		return
+	}
+
+	note := body.Note
+	if note == "" {
+		note = "I thought you might find this useful for your studies!"
+	}
+
+	htmlBody := fmt.Sprintf(`
+<p>Hi there 👋</p>
+<p>Your classmate <strong>%s</strong> shared a study resource with you via APAIS!</p>
+<div style="background:#0f172a;border-radius:12px;padding:24px;margin:24px 0;border-left:4px solid #4361ee;">
+  <h3 style="color:#a5b4fc;margin:0 0 8px;">📚 %s</h3>
+  <a href="%s" style="color:#4361ee;font-size:14px;">%s</a>
+  <p style="color:#94a3b8;margin:12px 0 0;font-style:italic;">"%s"</p>
+</div>
+<a href="%s" class="btn" style="display:inline-block;margin:8px 0;padding:12px 28px;background:linear-gradient(135deg,#4361ee,#7c3aed);color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">
+  ▶ Open Resource
+</a>`,
+		body.SenderName, body.ResourceTitle, body.ResourceURL, body.ResourceURL, note, body.ResourceURL)
+
+	subject := fmt.Sprintf("📚 %s shared a study resource with you — APAIS", body.SenderName)
+	if err := sendMail(body.ToEmail, subject, buildHTML(subject, htmlBody)); err != nil {
+		http.Error(w, "Failed to send resource email", http.StatusInternalServerError)
+		return
+	}
+
+	// Store collaboration record in DB
+	client, _ := models.ConnectDB(getMongoURI())
+	if client != nil {
+		collabColl := models.GetCollection(client, "collaborations")
+		collabColl.InsertOne(context.Background(), bson.M{
+			"from_email":     body.FromEmail,
+			"to_email":       body.ToEmail,
+			"resource_title": body.ResourceTitle,
+			"resource_url":   body.ResourceURL,
+			"note":           note,
+			"sent_at":        time.Now(),
+		})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "sent"})
+}
+
+// CollaborateGetReceived — GET /api/collaborate/received
+// Returns resources received by the current user.
+func CollaborateGetReceived(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value("userID").(string)
+	if !ok || userID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	client, err := models.ConnectDB(getMongoURI())
+	if err != nil {
+		http.Error(w, "Database connection failed", http.StatusInternalServerError)
+		return
+	}
+
+	// Get user email
+	objectID, _ := primitive.ObjectIDFromHex(userID)
+	var user models.User
+	models.GetCollection(client, "users").FindOne(context.Background(), bson.M{"_id": objectID}).Decode(&user)
+
+	collabColl := models.GetCollection(client, "collaborations")
+	cursor, err := collabColl.Find(context.Background(), bson.M{"to_email": user.Email})
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode([]interface{}{})
+		return
+	}
+	defer cursor.Close(context.Background())
+
+	var items []map[string]interface{}
+	cursor.All(context.Background(), &items)
+	if items == nil {
+		items = []map[string]interface{}{}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(items)
+}
+
+// GetNotifications — GET /api/notifications
+// Returns in-app notifications for the current user.
+func GetNotifications(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value("userID").(string)
+	if !ok || userID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	client, err := models.ConnectDB(getMongoURI())
+	if err != nil {
+		http.Error(w, "Database connection failed", http.StatusInternalServerError)
+		return
+	}
+
+	objectID, _ := primitive.ObjectIDFromHex(userID)
+	var user models.User
+	models.GetCollection(client, "users").FindOne(context.Background(), bson.M{"_id": objectID}).Decode(&user)
+
+	// Fetch recent collaborations received
+	collabColl := models.GetCollection(client, "collaborations")
+	cursor, _ := collabColl.Find(context.Background(), bson.M{"to_email": user.Email})
+	var collabs []map[string]interface{}
+	if cursor != nil {
+		cursor.All(context.Background(), &collabs)
+		cursor.Close(context.Background())
+	}
+
+	notifications := []map[string]interface{}{}
+	for _, c := range collabs {
+		notifications = append(notifications, map[string]interface{}{
+			"type":    "collaboration",
+			"icon":    "📚",
+			"title":   fmt.Sprintf("%v shared a resource", c["from_email"]),
+			"message": fmt.Sprintf("📖 %v", c["resource_title"]),
+			"url":     c["resource_url"],
+			"time":    c["sent_at"],
+			"read":    false,
+		})
+	}
+
+	// Add static system notifications
+	notifications = append(notifications, map[string]interface{}{
+		"type":    "system",
+		"icon":    "🎯",
+		"title":   "Study Reminder",
+		"message": "You have pending tasks. Stay on track!",
+		"time":    time.Now().Add(-30 * time.Minute),
+		"read":    false,
+	})
+	notifications = append(notifications, map[string]interface{}{
+		"type":    "system",
+		"icon":    "📈",
+		"title":   "Weekly Progress",
+		"message": "Check your analytics to see your weekly performance.",
+		"time":    time.Now().Add(-2 * time.Hour),
+		"read":    false,
+	})
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(notifications)
 }

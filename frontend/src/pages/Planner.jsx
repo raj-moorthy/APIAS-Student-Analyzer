@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 
 const PRIORITY_CONFIG = {
-  high: { label: 'High', color: '#ef4444', bg: 'rgba(239,68,68,0.1)', icon: '🔴' },
-  medium: { label: 'Medium', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', icon: '🟡' },
-  low: { label: 'Low', color: '#10b981', bg: 'rgba(16,185,129,0.1)', icon: '🟢' },
+  high:   { label: 'High',   color: '#ef4444', bg: 'rgba(239,68,68,0.12)',   icon: '🔴', glow: '#ef444440' },
+  medium: { label: 'Medium', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)',  icon: '🟡', glow: '#f59e0b40' },
+  low:    { label: 'Low',    color: '#10b981', bg: 'rgba(16,185,129,0.12)',  icon: '🟢', glow: '#10b98140' },
 };
 
 const SUBJECT_OPTIONS = [
@@ -13,11 +13,12 @@ const SUBJECT_OPTIONS = [
   'Data Science', 'Machine Learning', 'Web Development',
 ];
 
-const STATUS_ICONS = { pending: '⏳', completed: '✅' };
+const STATUS_ICONS  = { pending: '⏳', 'in-progress': '🔄', completed: '✅' };
+const STATUS_COLORS = { pending: '#f59e0b', 'in-progress': '#4361ee', completed: '#10b981' };
 
 const Planner = () => {
   const { user } = useAuth();
-  const [tasks, setTasks] = useState([]);
+  const [tasks, setTasks]   = useState([]);
   const [filter, setFilter] = useState('all');
   const [newTask, setNewTask] = useState({
     title: '', subject: '', priority: 'medium', dueDate: '', estimatedHours: ''
@@ -59,51 +60,89 @@ const Planner = () => {
   const filtered = filter === 'all' ? tasks : tasks.filter(t => t.status === filter);
 
   const stats = {
-    total: tasks.length,
-    pending: tasks.filter(t => t.status === 'pending').length,
-    inProg: tasks.filter(t => t.status === 'in-progress').length,
-    done: tasks.filter(t => t.status === 'completed').length,
+    total:    tasks.length,
+    pending:  tasks.filter(t => t.status === 'pending').length,
+    inProg:   tasks.filter(t => t.status === 'in-progress').length,
+    done:     tasks.filter(t => t.status === 'completed').length,
     totalHrs: tasks.reduce((s, t) => s + (t.estimatedHours || 0), 0),
   };
 
   const completionRate = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
-
   const today = new Date().toISOString().split('T')[0];
+
+  const KPI_CARDS = [
+    {
+      icon: '📋', label: 'Total Tasks', value: stats.total,
+      color: '#4361ee', bg: 'rgba(67,97,238,0.12)', subtext: 'Scheduled',
+      extra: stats.total > 0 ? `${completionRate}% done` : 'Start adding tasks',
+    },
+    {
+      icon: '⏳', label: 'Pending', value: stats.pending,
+      color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', subtext: 'To do',
+      extra: stats.pending > 0 ? 'Needs attention' : '🎉 All clear!',
+    },
+    {
+      icon: '🔄', label: 'In Progress', value: stats.inProg,
+      color: '#7c3aed', bg: 'rgba(124,58,237,0.12)', subtext: 'Active',
+      extra: stats.inProg > 0 ? 'Keep going!' : 'None active',
+    },
+    {
+      icon: '✅', label: 'Completed', value: stats.done,
+      color: '#10b981', bg: 'rgba(16,185,129,0.12)', subtext: 'Done',
+      extra: `${completionRate}% rate`,
+    },
+    {
+      icon: '⏱️', label: 'Est. Hours', value: `${stats.totalHrs}h`,
+      color: '#f72585', bg: 'rgba(247,37,133,0.12)', subtext: 'Total workload',
+      extra: stats.totalHrs > 0 ? `≈ ${(stats.totalHrs / 8).toFixed(1)} study days` : 'No hours logged',
+    },
+  ];
 
   return (
     <div className="planner-container fade-in">
 
-      {/* ── KPI Bar ── */}
-      <div className="kpi-row">
-        <div className="kpi-card glassmorphism">
-          <div className="kpi-icon kpi-icon--primary">📋</div>
-          <div className="kpi-body">
-            <div className="kpi-value">{stats.total}</div>
-            <div className="kpi-label">Total Tasks</div>
+      {/* ── Premium KPI Cards ── */}
+      <div className="kpi-row kpi-row--5col">
+        {KPI_CARDS.map((card, i) => (
+          <div
+            key={i}
+            className="kpi-card kpi-card--premium glassmorphism"
+            style={{ '--kpi-color': card.color, '--kpi-bg': card.bg, animationDelay: `${i * 80}ms` }}
+          >
+            <div className="kpi-card-top">
+              <div className="kpi-icon-wrap" style={{ background: card.bg }}>
+                <span className="kpi-icon-emoji">{card.icon}</span>
+              </div>
+              <span className="kpi-trend-tag">{card.subtext}</span>
+            </div>
+            <div className="kpi-value-wrap">
+              <div className="kpi-value kpi-value--large">{card.value}</div>
+              <div className="kpi-label">{card.label}</div>
+            </div>
+            <div className="kpi-card-footer">
+              <span className="kpi-extra-info">{card.extra}</span>
+            </div>
+            {/* Colour accent bar at bottom */}
+            <div className="kpi-accent-bar" style={{ background: `linear-gradient(90deg, ${card.color}, transparent)` }} />
           </div>
-        </div>
-        <div className="kpi-card glassmorphism">
-          <div className="kpi-icon kpi-icon--warning">⏳</div>
-          <div className="kpi-body">
-            <div className="kpi-value">{stats.pending}</div>
-            <div className="kpi-label">Pending</div>
-          </div>
-        </div>
-        <div className="kpi-card glassmorphism">
-          <div className="kpi-icon kpi-icon--success">✅</div>
-          <div className="kpi-body">
-            <div className="kpi-value">{stats.done}</div>
-            <div className="kpi-label">Completed</div>
-          </div>
-        </div>
-        <div className="kpi-card glassmorphism">
-          <div className="kpi-icon kpi-icon--danger">⏱️</div>
-          <div className="kpi-body">
-            <div className="kpi-value">{stats.totalHrs}h</div>
-            <div className="kpi-label">Est. Hours</div>
-          </div>
-        </div>
+        ))}
       </div>
+
+      {/* Completion progress bar */}
+      {stats.total > 0 && (
+        <div className="planner-progress-bar glassmorphism">
+          <div className="progress-bar-header">
+            <span>🎯 Overall Completion</span>
+            <strong>{completionRate}%</strong>
+          </div>
+          <div className="progress-track">
+            <div
+              className="progress-fill"
+              style={{ width: `${completionRate}%`, background: 'linear-gradient(90deg, #4361ee, #7c3aed, #10b981)' }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* ── Main Layout ── */}
       <div className="content-split-layout">
@@ -175,7 +214,7 @@ const Planner = () => {
         <div className="display-panel-side">
           {/* Filter Tabs */}
           <div className="filter-tab-row">
-            {['all', 'pending', 'completed'].map(f => (
+            {['all', 'pending', 'in-progress', 'completed'].map(f => (
               <button
                 key={f}
                 className={`filter-tab ${filter === f ? 'active' : ''}`}
@@ -198,7 +237,11 @@ const Planner = () => {
                   <div
                     key={task.id}
                     className={`task-card premium-card ${task.status === 'completed' ? 'task-done' : ''}`}
-                    style={{ animationDelay: `${idx * 60}ms`, borderLeft: `4px solid ${p.color}` }}
+                    style={{
+                      animationDelay: `${idx * 60}ms`,
+                      borderLeft: `4px solid ${p.color}`,
+                      boxShadow: `0 4px 24px ${p.glow}`,
+                    }}
                   >
                     <div className="task-card-top">
                       <div className="task-priority-pill" style={{ background: p.bg, color: p.color }}>
@@ -209,6 +252,7 @@ const Planner = () => {
                           className="status-cycle-btn"
                           onClick={() => handleStatusCycle(task.id)}
                           title="Cycle status"
+                          style={{ color: STATUS_COLORS[task.status] }}
                         >
                           {STATUS_ICONS[task.status]}
                         </button>
@@ -247,7 +291,10 @@ const Planner = () => {
                           ? new Date(task.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
                           : 'No deadline'}
                       </span>
-                      <span className={`status-badge status-${task.status}`}>
+                      <span
+                        className={`status-badge status-${task.status}`}
+                        style={{ background: `${STATUS_COLORS[task.status]}22`, color: STATUS_COLORS[task.status] }}
+                      >
                         {task.status.replace('-', ' ').toUpperCase()}
                       </span>
                     </div>

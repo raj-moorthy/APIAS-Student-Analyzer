@@ -2,16 +2,27 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 
 /* ─── tiny animated KPI card ─── */
-const KpiCard = ({ icon, label, value, sub, color = 'primary', delay = 0 }) => (
-  <div className="kpi-card glassmorphism" style={{ animationDelay: `${delay}ms` }}>
-    <div className={`kpi-icon kpi-icon--${color}`}>{icon}</div>
-    <div className="kpi-body">
-      <div className="kpi-value">{value}</div>
-      <div className="kpi-label">{label}</div>
-      {sub && <div className="kpi-sub">{sub}</div>}
+const KpiCard = ({ icon, label, value, sub, color = 'primary', delay = 0 }) => {
+  const isLongValue = typeof value === 'string' && value.length > 6;
+  return (
+    <div className="kpi-card glassmorphism" style={{ animationDelay: `${delay}ms` }}>
+      <div className={`kpi-icon kpi-icon--${color}`}>{icon}</div>
+      <div className="kpi-body" style={{ minWidth: 0, flex: 1 }}>
+        <div className={`kpi-value ${isLongValue ? 'kpi-value--long' : ''}`} title={value}>
+          {value}
+        </div>
+        <div className="kpi-label" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={label}>
+          {label}
+        </div>
+        {sub && (
+          <div className="kpi-sub" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={sub}>
+            {sub}
+          </div>
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 /* ─── collapsible section wrapper ─── */
 const Section = ({ title, icon, children, defaultOpen = true }) => {

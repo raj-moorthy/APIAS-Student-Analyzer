@@ -55,6 +55,46 @@ const Landing = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [scrolled, setScrolled] = useState(false);
+  const [scholarFeedbacks, setScholarFeedbacks] = useState([
+    {
+      text: "Implementing the APAIS analytics system has completely overhauled how I schedule my exams. The GPA booster modules pinpoint exactly where my study voids are.",
+      name: "Amelia Chen",
+      role: "Computer Science Major, Sem 6",
+      avatar: "AC",
+      rating: 5
+    },
+    {
+      text: "The YouTube dynamic learning interface is outstanding. I typed my physics curriculum and got immediate, highly popular videos that helped me score 95% on my midterms.",
+      name: "David Sterling",
+      role: "Biochemistry Major, Sem 4",
+      avatar: "DS",
+      rating: 5
+    },
+    {
+      text: "As an administrator, having a predictive warning engine helps us target students struggling with specific courses early enough to offer beneficial help.",
+      name: "Dr. Marcus Vance",
+      role: "Dean of Academic Affairs, Stanford L&D",
+      avatar: "MV",
+      rating: 5
+    }
+  ]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('apais_scholar_feedback');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setScholarFeedbacks(prev => {
+            const filtered = prev.filter(f => !parsed.some(p => p.name === f.name));
+            return [...parsed, ...filtered];
+          });
+        }
+      } catch (err) {
+        console.error("Failed to parse feedbacks from localStorage", err);
+      }
+    }
+  }, []);
 
   // Stats Section Trigger
   const [statsRef, statsActive] = useScrollActive();
@@ -416,31 +456,21 @@ const Landing = () => {
           <p className="lp-sec-sub">Real testimonies from student cohorts and institution operators utilizing our suite.</p>
         </div>
         <div className="lp-testi-grid">
-          {[
-            {
-              text: "Implementing the APAIS analytics system has completely overhauled how I schedule my exams. The GPA booster modules pinpoint exactly where my study voids are.",
-              name: "Amelia Chen",
-              role: "Computer Science Major, Sem 6",
-              avatar: "AC"
-            },
-            {
-              text: "The YouTube dynamic learning interface is outstanding. I typed my physics curriculum and got immediate, highly popular videos that helped me score 95% on my midterms.",
-              name: "David Sterling",
-              role: "Biochemistry Major, Sem 4",
-              avatar: "DS"
-            },
-            {
-              text: "As an administrator, having a predictive warning engine helps us target students struggling with specific courses early enough to offer beneficial help.",
-              name: "Dr. Marcus Vance",
-              role: "Dean of Academic Affairs, Stanford L&D",
-              avatar: "MV"
-            }
-          ].map((t, i) => (
+          {scholarFeedbacks.map((t, i) => (
             <div className="lp-testi-card lp-glass" key={i}>
-              <span className="lp-testi-quote">“</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                <span className="lp-testi-quote" style={{ margin: 0, lineHeight: 1 }}>“</span>
+                <div style={{ color: '#eab308', display: 'flex', gap: '0.1rem', fontSize: '0.9rem' }}>
+                  {Array.from({ length: t.rating || 5 }).map((_, sIdx) => (
+                    <span key={sIdx}>★</span>
+                  ))}
+                </div>
+              </div>
               <p>{t.text}</p>
               <div className="lp-testi-user">
-                <div className="lp-testi-avatar">{t.avatar}</div>
+                <div className="lp-testi-avatar" style={{ background: 'linear-gradient(135deg, var(--color-purple) 0%, var(--color-cyan) 100%)', color: '#fff', fontWeight: '800' }}>
+                  {t.avatar}
+                </div>
                 <div>
                   <div className="lp-testi-name">{t.name}</div>
                   <div className="lp-testi-role">{t.role}</div>

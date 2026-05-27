@@ -16,6 +16,8 @@ func SetupRouter(cfg *config.Config) *mux.Router {
 	authRouter.HandleFunc("/register", controllers.RegisterUser).Methods("POST")
 	authRouter.HandleFunc("/login", controllers.LoginUser).Methods("POST")
 	authRouter.HandleFunc("/logout", controllers.LogoutUser).Methods("POST")
+	authRouter.HandleFunc("/forgot-password", controllers.ForgotPassword).Methods("POST")
+	authRouter.HandleFunc("/reset-password", controllers.ResetPassword).Methods("POST")
 
 	// Protected routes (require authentication)
 	protectedRouter := router.PathPrefix("/api").Subrouter()
@@ -68,6 +70,13 @@ func SetupRouter(cfg *config.Config) *mux.Router {
 	protectedRouter.HandleFunc("/notify/task", controllers.SendTaskReminderEmail).Methods("POST")
 	protectedRouter.HandleFunc("/notify/goal", controllers.SendGoalUpdateEmail).Methods("POST")
 	protectedRouter.HandleFunc("/notify/resources", controllers.SendResourceDigestEmail).Methods("POST")
+
+	// In-app notifications
+	protectedRouter.HandleFunc("/notifications", controllers.GetNotifications).Methods("GET")
+
+	// Collaboration routes
+	protectedRouter.HandleFunc("/collaborate/send", controllers.CollaborateSendResource).Methods("POST")
+	protectedRouter.HandleFunc("/collaborate/received", controllers.CollaborateGetReceived).Methods("GET")
 
 	return router
 }
