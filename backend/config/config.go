@@ -36,7 +36,7 @@ func LoadConfig() (*Config, error) {
 	config := &Config{
 		Environment: getEnv("ENVIRONMENT", "development"),
 		MongoURI:    getEnv("MONGO_URI", "mongodb://localhost:27017/student_analyzer"),
-		ServerPort:  getEnv("SERVER_PORT", "8080"),
+		ServerPort:  getEnv("PORT", getEnv("SERVER_PORT", "8080")),
 		JWTSecret:   getEnv("JWT_SECRET", "your-secret-key"),
 		SMTPHost:    getEnv("SMTP_HOST", ""),
 		SMTPPort:    getEnv("SMTP_PORT", "587"),
