@@ -15,8 +15,9 @@ const DOMAIN_OPTIONS = [
   'Problem Solving', 'Exam Preparation', 'Lab / Practical',
 ];
 
-// ─── Curated Blog Articles ──────────────────────────────────────────────────
-const BLOG_ARTICLES = [
+// ─── Curated Blog Articles Pool ──────────────────────────────────────────────
+const BLOG_ARTICLES_POOL = [
+  // General Study Skills & Productivity
   {
     id: 'b1',
     title: 'How to Build a Study Schedule That Actually Works',
@@ -27,6 +28,8 @@ const BLOG_ARTICLES = [
     category: 'Study Skills',
     readTime: '7 min read',
     emoji: '📅',
+    subjects: ['all'],
+    levels: ['beginner', 'intermediate']
   },
   {
     id: 'b2',
@@ -38,10 +41,12 @@ const BLOG_ARTICLES = [
     category: 'Learning Methods',
     readTime: '6 min read',
     emoji: '🧠',
+    subjects: ['all'],
+    levels: ['beginner', 'intermediate', 'advanced']
   },
   {
     id: 'b3',
-    title: 'Khan Academy Blog — Study Tips for Exam Season',
+    title: 'Study Tips for Exam Season',
     author: 'Khan Academy',
     source: 'blog.khanacademy.org',
     url: 'https://blog.khanacademy.org/',
@@ -49,41 +54,205 @@ const BLOG_ARTICLES = [
     category: 'Exam Prep',
     readTime: '5 min read',
     emoji: '📝',
+    subjects: ['all'],
+    levels: ['beginner']
+  },
+  // Computer Science & Software
+  {
+    id: 'cs1',
+    title: 'How to Think Like a Computer Scientist',
+    author: 'Allen Downey',
+    source: 'greenteapress.com',
+    url: 'https://greenteapress.com/wp/think-python-2e/',
+    description: 'An excellent introduction to computational thinking, algorithms, and logical structural design using Python.',
+    category: 'Computer Science',
+    readTime: '15 min read',
+    emoji: '💻',
+    subjects: ['Computer Science', 'Data Science', 'Machine Learning'],
+    levels: ['beginner']
   },
   {
-    id: 'b4',
-    title: 'MIT OpenCourseWare: Free Learning from the World\'s Best',
-    author: 'MIT OCW Team',
-    source: 'ocw.mit.edu',
-    url: 'https://ocw.mit.edu/',
-    description: 'Access world-class MIT course materials in engineering, science, math, and humanities — completely free of charge.',
-    category: 'Free Courses',
-    readTime: 'Course Library',
-    emoji: '🎓',
-  },
-  {
-    id: 'b5',
-    title: 'How to Take Smart Notes: The Zettelkasten Method',
-    author: 'Forte Labs',
-    source: 'fortelabs.com',
-    url: 'https://fortelabs.com/blog/basboverview/',
-    description: 'Learn the Zettelkasten note-taking system used by prolific academics to build a personal knowledge base.',
-    category: 'Productivity',
-    readTime: '10 min read',
-    emoji: '🗂️',
-  },
-  {
-    id: 'b6',
-    title: 'The Science of Sleep and Studying',
-    author: 'Huberman Lab',
-    source: 'hubermanlab.com',
-    url: 'https://www.hubermanlab.com/newsletter/master-your-sleep-and-be-more-alert-when-awake',
-    description: 'Neuroscience-backed research on how sleep consolidates memory and why a proper sleep schedule supercharges learning.',
-    category: 'Health & Focus',
+    id: 'cs2',
+    title: 'Demystifying Data Structures and Algorithms',
+    author: 'BaseCS',
+    source: 'medium.com/basecs',
+    url: 'https://medium.com/basecs',
+    description: 'A beautifully animated, step-by-step breakdown of lists, heaps, sorting, and algorithmic complexity maps.',
+    category: 'Algorithms',
     readTime: '8 min read',
-    emoji: '😴',
+    emoji: '🌲',
+    subjects: ['Computer Science', 'Web Development'],
+    levels: ['intermediate']
   },
+  {
+    id: 'cs3',
+    title: 'The Road to System Design Mastery',
+    author: 'ByteByteGo',
+    source: 'bytebytego.com',
+    url: 'https://bytebytego.com/',
+    description: 'Advanced guides covering load balancers, caching, distributed databases, and high-availability architecture scales.',
+    category: 'System Design',
+    readTime: '12 min read',
+    emoji: '⚡',
+    subjects: ['Computer Science', 'Electrical Engineering'],
+    levels: ['advanced']
+  },
+  // Mathematics & Calculus
+  {
+    id: 'math1',
+    title: 'Intuitive Guide to Calculus and Limits',
+    author: 'BetterExplained',
+    source: 'betterexplained.com',
+    url: 'https://betterexplained.com/calculus/',
+    description: 'An outstanding visual review explaining why calculus derivative rules exist and how to visualize them intuitively.',
+    category: 'Mathematics',
+    readTime: '10 min read',
+    emoji: '📐',
+    subjects: ['Mathematics', 'Physics', 'Mechanical Engineering'],
+    levels: ['beginner', 'intermediate']
+  },
+  {
+    id: 'math2',
+    title: 'Why Abstract Algebra is Secretly Everywhere',
+    author: '3Blue1Brown',
+    source: '3blue1brown.com',
+    url: 'https://www.3blue1brown.com/',
+    description: 'A beautiful geometric guide to symmetry groups, rings, vector dimensions, and higher algebraic properties.',
+    category: 'Mathematics',
+    readTime: '9 min read',
+    emoji: '🧮',
+    subjects: ['Mathematics', 'Machine Learning'],
+    levels: ['advanced']
+  },
+  // Physics & Mechanics
+  {
+    id: 'phys1',
+    title: 'The Grand Design: Exploring Space-Time Curves',
+    author: 'Stephen Hawking',
+    source: 'scientificamerican.com',
+    url: 'https://www.scientificamerican.com/',
+    description: 'Exploring Einstein\'s relativity theorems, space curves, gravity waves, and quantum field behaviors simply.',
+    category: 'Physics',
+    readTime: '11 min read',
+    emoji: '🌌',
+    subjects: ['Physics', 'Geography'],
+    levels: ['beginner', 'intermediate']
+  },
+  {
+    id: 'phys2',
+    title: 'Quantum Computing and Superposition Voids',
+    author: 'IBM Quantum',
+    source: 'ibm.com/quantum',
+    url: 'https://www.ibm.com/topics/quantum-computing',
+    description: 'An advanced deep dive into qubits, logic gates, entanglement matrices, and cryogenic quantum processing units.',
+    category: 'Physics',
+    readTime: '14 min read',
+    emoji: '⚛️',
+    subjects: ['Physics', 'Computer Science', 'Electrical Engineering'],
+    levels: ['advanced']
+  },
+  // Machine Learning & Data Science
+  {
+    id: 'ml1',
+    title: 'Introduction to Machine Learning Pipelines',
+    author: 'Scikit-Learn Team',
+    source: 'scikit-learn.org',
+    url: 'https://scikit-learn.org/stable/tutorial/index.html',
+    description: 'Step-by-step introduction to training estimators, splitting folds, predicting validation labels, and scaling traits.',
+    category: 'Machine Learning',
+    readTime: '8 min read',
+    emoji: '🤖',
+    subjects: ['Machine Learning', 'Data Science'],
+    levels: ['beginner', 'intermediate']
+  },
+  {
+    id: 'ml2',
+    title: 'Deep Learning Mastery: Neural Network Backprop',
+    author: 'Andrej Karpathy',
+    source: 'karpathy.github.io',
+    url: 'https://karpathy.github.io/',
+    description: 'Understanding loss gradients, weights matrices, attention vectors, and backpropagation pathways manually.',
+    category: 'Machine Learning',
+    readTime: '18 min read',
+    emoji: '🧠',
+    subjects: ['Machine Learning', 'Data Science'],
+    levels: ['advanced']
+  },
+  // Web Development
+  {
+    id: 'web1',
+    title: 'Modern CSS Layouts: Flexbox and Grid Mastery',
+    author: 'Rachel Andrew',
+    source: 'smashingmagazine.com',
+    url: 'https://www.smashingmagazine.com/2020/01/understanding-css-grid-flexbox/',
+    description: 'Complete guide to responsive grid margins, flex directions, absolute positions, and media viewport scales.',
+    category: 'Web Development',
+    readTime: '8 min read',
+    emoji: '🌐',
+    subjects: ['Web Development'],
+    levels: ['beginner', 'intermediate']
+  },
+  {
+    id: 'web2',
+    title: 'React Server Components: Under the Hood Architecture',
+    author: 'Dan Abramov',
+    source: 'overreacted.io',
+    url: 'https://overreacted.io/',
+    description: 'Deep dive into stream renders, client borders, state dehydration, and React 19 hydration lifecycles.',
+    category: 'Web Development',
+    readTime: '13 min read',
+    emoji: '⚛️',
+    subjects: ['Web Development', 'Computer Science'],
+    levels: ['advanced']
+  },
+  // Engineering (Mechanical & Electrical)
+  {
+    id: 'eng1',
+    title: 'All About Circuits Reference Library',
+    author: 'EE Experts',
+    source: 'allaboutcircuits.com',
+    url: 'https://www.allaboutcircuits.com/',
+    description: 'Foundational electronics references covering passive components, op-amps, feedback loops, and wave filters.',
+    category: 'Electrical Engineering',
+    readTime: 'Reference',
+    emoji: '🔌',
+    subjects: ['Electrical Engineering', 'Physics'],
+    levels: ['beginner', 'intermediate', 'advanced']
+  },
+  {
+    id: 'eng2',
+    title: 'Engineers Edge: Structural Stress Formulas',
+    author: 'Mech Engineering Team',
+    source: 'engineersedge.com',
+    url: 'https://www.engineersedge.com/',
+    description: 'Comprehensive guides for structural dynamics, truss stresses, heat transfer, and mechanical cad alignments.',
+    category: 'Mechanical Engineering',
+    readTime: 'Reference',
+    emoji: '⚙️',
+    subjects: ['Mechanical Engineering', 'Physics'],
+    levels: ['beginner', 'intermediate', 'advanced']
+  }
 ];
+
+const getRecommendedBlogs = (selectedSubject, selectedDomain, selectedLevel) => {
+  const filtered = BLOG_ARTICLES_POOL.filter(blog => {
+    // Subject filter
+    const matchesSubject = !selectedSubject || 
+      selectedSubject === 'Custom' ||
+      blog.subjects.includes('all') || 
+      blog.subjects.some(s => s.toLowerCase() === selectedSubject.toLowerCase());
+    
+    // Level filter
+    const matchesLevel = !selectedLevel || 
+      blog.levels.includes(selectedLevel.toLowerCase());
+
+    return matchesSubject && matchesLevel;
+  });
+
+  if (filtered.length > 0) return filtered;
+  // Fallback to general productivity/study tips
+  return BLOG_ARTICLES_POOL.filter(b => b.subjects.includes('all'));
+};
 
 // ─── Share Resource Modal ───────────────────────────────────────────────────
 const ShareModal = ({ resource, onClose, user }) => {
@@ -181,6 +350,20 @@ const getYouTubeUrl = (video) => {
   }
   const cleanId = video.id ? video.id.trim() : '';
   return `https://www.youtube.com/watch?v=${cleanId}`;
+};
+
+const getSafeRedirectUrl = (url, fallbackTitle) => {
+  if (!url || typeof url !== 'string' || !url.trim()) {
+    return `https://www.youtube.com/results?search_query=${encodeURIComponent(fallbackTitle || 'education')}`;
+  }
+  const trimmed = url.trim();
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed;
+  }
+  if (trimmed.length === 11 && !trimmed.includes(' ') && !trimmed.includes('.')) {
+    return `https://www.youtube.com/watch?v=${trimmed}`;
+  }
+  return `https://${trimmed}`;
 };
 
 // ─── Received Resources Panel ───────────────────────────────────────────────
@@ -293,13 +476,32 @@ const Resources = () => {
 
   /* ── search handler ── */
   const handleSearch = (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     const parts = [];
-    if (subject)     parts.push(subject);
-    if (domain)      parts.push(domain);
-    if (level)       parts.push(level);
-    if (customQuery) parts.push(customQuery);
-    if (parts.length === 0) parts.push('study tips');
+    
+    // Subject matching
+    if (subject === 'Custom' && customQuery) {
+      parts.push(customQuery);
+    } else if (subject && subject !== 'Custom') {
+      parts.push(subject);
+    }
+
+    // Format/Domain matching
+    if (domain) {
+      parts.push(domain);
+    }
+
+    // Level matching
+    if (level) {
+      if (level === 'beginner') parts.push('introduction basic');
+      else if (level === 'intermediate') parts.push('concepts practice');
+      else if (level === 'advanced') parts.push('deep dive masterclass');
+    }
+
+    if (parts.length === 0) {
+      parts.push('study tips');
+    }
+
     fetchVideos(parts.join(' ') + ' english');
   };
 
@@ -444,7 +646,7 @@ const Resources = () => {
                         <span className="res-views-badge">🔥 {video.views}</span>
                         <div className="res-video-actions">
                           <a
-                            href={getYouTubeUrl(video)}
+                            href={getSafeRedirectUrl(getYouTubeUrl(video), video.title)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="btn-primary res-watch-btn"
@@ -453,7 +655,7 @@ const Resources = () => {
                           </a>
                           <button
                             className="btn-secondary res-share-btn"
-                            onClick={() => setShareModal({ title: video.title, url: getYouTubeUrl(video) })}
+                            onClick={() => setShareModal({ title: video.title, url: getSafeRedirectUrl(getYouTubeUrl(video), video.title) })}
                             title="Share with classmate"
                           >
                             🤝 Share
@@ -483,7 +685,7 @@ const Resources = () => {
             <span className="res-results-tag">Handpicked by educators</span>
           </div>
           <div className="blog-grid">
-            {BLOG_ARTICLES.map((article, idx) => (
+            {getRecommendedBlogs(subject, domain, level).map((article, idx) => (
               <div
                 key={article.id}
                 className="blog-card glassmorphism"
@@ -502,7 +704,7 @@ const Resources = () => {
                   </div>
                   <div className="blog-actions">
                     <a
-                      href={article.url}
+                      href={getSafeRedirectUrl(article.url, article.title)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="btn-primary res-watch-btn"
@@ -511,7 +713,7 @@ const Resources = () => {
                     </a>
                     <button
                       className="btn-secondary res-share-btn"
-                      onClick={() => setShareModal({ title: article.title, url: article.url })}
+                      onClick={() => setShareModal({ title: article.title, url: getSafeRedirectUrl(article.url, article.title) })}
                     >
                       🤝 Share
                     </button>
