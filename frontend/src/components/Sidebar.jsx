@@ -27,6 +27,30 @@ const Sidebar = () => {
   /* Pulse animation for active nav item */
   const activeItem = NAV_ITEMS.find(i => i.path === location.pathname);
 
+  /* Automatically close mobile sidebar on navigation */
+  useEffect(() => {
+    document.body.classList.remove('sidebar-mobile-open');
+  }, [location.pathname]);
+
+  /* Outside click listener to dismiss mobile sidebar drawer */
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (document.body.classList.contains('sidebar-mobile-open')) {
+        const sidebarEl = document.querySelector('.sidebar');
+        const toggleEl = document.querySelector('.mobile-sidebar-toggle');
+        if (sidebarEl && !sidebarEl.contains(e.target) && (!toggleEl || !toggleEl.contains(e.target))) {
+          document.body.classList.remove('sidebar-mobile-open');
+        }
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('touchstart', handleOutsideClick);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('touchstart', handleOutsideClick);
+    };
+  }, []);
+
   if (!user) return null;
 
   const initials = `${user.firstName?.[0] || ''}${user.lastName?.[0] || user.username?.[0] || ''}`.toUpperCase();

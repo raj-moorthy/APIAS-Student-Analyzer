@@ -4149,4 +4149,190 @@ body.dark .notif-dropdown-footer span:hover {
   text-decoration: underline !important;
 }
 
+/* ==========================================================================
+   MOBILE SIDEBAR TOGGLE DEFAULT (Desktop Mode)
+   ========================================================================== */
+.mobile-sidebar-toggle {
+  display: none;
+}
+
+/* ==========================================================================
+   MOBILE RESPONSIVE SYSTEM (Media Queries)
+   ========================================================================== */
+@media (max-width: 1024px) {
+  .features-grid, .grid-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Layout modifications */
+  .app {
+    flex-direction: column !important;
+    overflow-x: hidden !important;
+  }
+  
+  .main-content {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .page-content {
+    padding: 1.25rem 1rem !important;
+  }
+
+  /* Hamburger Toggle button in Header */
+  .mobile-sidebar-toggle {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    font-size: 1.6rem;
+    color: var(--text-main);
+    cursor: pointer;
+    margin-right: 0.8rem;
+    padding: 0.2rem;
+    border-radius: 6px;
+    transition: background 0.2s;
+  }
+  .mobile-sidebar-toggle:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  /* Sidebar transformed into drawer overlay */
+  .sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 270px !important;
+    z-index: 1000 !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    box-shadow: none !important;
+  }
+
+  /* When sidebar is opened via document.body class */
+  body.sidebar-mobile-open .sidebar {
+    transform: translateX(0) !important;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.6) !important;
+  }
+
+  /* Collapsible button within the sidebar drawer is redundant on mobile */
+  .sidebar-toggle-btn {
+    display: none !important;
+  }
+
+  /* Backdrop filter when mobile sidebar is open */
+  body.sidebar-mobile-open::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    z-index: 999;
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  /* Header adjustments */
+  .header {
+    padding: 0.75rem 1rem !important;
+    position: sticky !important;
+    top: 0;
+    z-index: 990 !important;
+  }
+
+  .header-content {
+    gap: 0.75rem !important;
+  }
+
+  .header-user-meta {
+    gap: 0.6rem !important;
+  }
+
+  /* Grids and rows standard collapses */
+  .features-grid, .grid-4, .grid-3, .grid-2, .grid-2-1, .grid-1-2, .form-group-row, .settings-form-row {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  /* Tables & Calendar Horizontal Scroll wrappers */
+  .table-container, .calendar-container, .heatmap-container, .chart-wrap {
+    overflow-x: auto !important;
+    width: 100% !important;
+    display: block;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .week-calendar {
+    min-width: 600px !important;
+  }
+
+  .data-table {
+    min-width: 550px !important;
+  }
+
+  .heatmap-grid {
+    min-width: 480px !important;
+  }
+
+  /* Auth forms */
+  .auth-card {
+    padding: 2rem 1.5rem !important;
+    margin: 1rem !important;
+    width: 92% !important;
+  }
+
+  /* Goal hero score styling */
+  .goal-score-num {
+    font-size: 2.5rem !important;
+  }
+}
+
+@media (max-width: 600px) {
+  /* Hide clock display on extremely small devices to focus on page titles */
+  .header-time-chip {
+    display: none !important;
+  }
+
+  .header-badge {
+    padding: 0.3rem 0.5rem !important;
+    font-size: 0.75rem !important;
+  }
+  
+  .header-semester {
+    display: inline !important;
+  }
+  .header-divider, .header-major {
+    display: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-page-title {
+    font-size: 1.1rem !important;
+  }
+  
+  .header-breadcrumb {
+    display: none !important;
+  }
+
+  .lp-hero-title {
+    font-size: 2.2rem !important;
+  }
+
+  .lp-hero-subtitle {
+    font-size: 1rem !important;
+  }
+
+  /* Modals padding */
+  .modal-content, .feedback-modal {
+    padding: 1.5rem 1rem !important;
+    width: 94% !important;
+    margin: 10px !important;
+  }
+}
+
 

@@ -125,6 +125,14 @@ const Header = () => {
       <div className="header-content">
         {/* Left – Page Title */}
         <div className="header-page-info">
+          <button 
+            className="mobile-sidebar-toggle"
+            onClick={() => document.body.classList.toggle('sidebar-mobile-open')}
+            aria-label="Toggle Navigation Menu"
+            title="Toggle Navigation Menu"
+          >
+            ☰
+          </button>
           <div
             className="header-icon-badge"
             style={{ '--page-color': currentPage.color }}
