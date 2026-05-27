@@ -37,7 +37,7 @@ const Sidebar = () => {
     setShowFeedbackModal(true);
   };
 
-  const submitFeedback = (e) => {
+  const submitFeedback = async (e) => {
     if (e) e.preventDefault();
     const newFeedback = {
       text: feedbackText.trim() || `Excellent portal! Rated APAIS ${rating} out of 5.`,
@@ -59,6 +59,18 @@ const Sidebar = () => {
     }
     feedbacks.unshift(newFeedback);
     localStorage.setItem('apais_scholar_feedback', JSON.stringify(feedbacks));
+
+    try {
+      const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+      const cleanApiBase = apiBase.endsWith('/') ? apiBase.slice(0, -1) : apiBase;
+      await fetch(`${cleanApiBase}/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newFeedback)
+      });
+    } catch (err) {
+      console.error("Failed to save feedback to global database", err);
+    }
 
     logout();
     navigate('/login');
