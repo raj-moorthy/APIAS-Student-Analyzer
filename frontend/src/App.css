@@ -4481,4 +4481,104 @@ body.dark .notif-dropdown-footer span:hover {
   }
 }
 
+/* ==========================================================================
+   HIGH-UX TOUCHSCREEN & LAYOUT OPTIMIZATIONS FOR TRUE MOBILE VIEW
+   ========================================================================== */
+@media (max-width: 768px) {
+  body {
+    font-size: 0.9rem !important;
+  }
+  
+  h1, .page-title, .header-page-title {
+    font-size: 1.35rem !important;
+    letter-spacing: -0.3px !important;
+    font-weight: 700 !important;
+  }
+  
+  h2 {
+    font-size: 1.2rem !important;
+    letter-spacing: -0.2px !important;
+  }
+  
+  h3 {
+    font-size: 1.05rem !important;
+  }
+
+  /* Compact page margins to save space on mobile */
+  .page-content {
+    padding: 0.85rem !important;
+  }
+
+  /* Premium touch targets (42px minimum for thumbs/fingers) */
+  button, input, select, textarea, .tag-btn, .btn-primary, .btn-secondary, .res-tab-btn {
+    min-height: 42px !important;
+    font-size: 0.9rem !important;
+  }
+
+  /* Expanded navigation links touch targets */
+  .sidebar-link {
+    padding: 0.85rem 1.25rem !important;
+    font-size: 1.05rem !important;
+    min-height: 44px !important;
+  }
+
+  /* Reclaim precious horizontal space inside content cards */
+  .card, .glassmorphism, .settings-block, .profile-header-card, .goal-card, .res-hero, .careers-glass {
+    padding: 1.2rem 1rem !important;
+    margin-bottom: 0.85rem !important;
+    border-radius: 12px !important;
+  }
+
+  /* Header optimization to stay completely on a single line */
+  .header {
+    height: 60px !important;
+    padding: 0 0.75rem !important;
+  }
+
+  .header-content {
+    height: 100% !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 0.5rem !important;
+  }
+
+  .mobile-sidebar-toggle {
+    font-size: 1.45rem !important;
+    margin-right: 0.4rem !important;
+    min-height: 36px !important;
+    width: 36px !important;
+  }
+
+  .header-page-info {
+    gap: 0.4rem !important;
+  }
+
+  .header-icon-badge {
+    width: 30px !important;
+    height: 30px !important;
+    font-size: 0.85rem !important;
+  }
+
+  .header-user-meta {
+    gap: 0.5rem !important;
+  }
+
+  /* Hide raw text username on mobile to guarantee zero wrap or clipping */
+  .header-user-name {
+    display: none !important;
+  }
+
+  .header-avatar {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 0.85rem !important;
+  }
+
+  .notif-bell-btn {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 1.1rem !important;
+  }
+}
+
 
