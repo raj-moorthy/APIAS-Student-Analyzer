@@ -16,241 +16,232 @@ const DOMAIN_OPTIONS = [
 ];
 
 // ─── Curated Blog Articles Pool ──────────────────────────────────────────────
+// ─── Curated Blog Articles Pool ──────────────────────────────────────────────
 const BLOG_ARTICLES_POOL = [
   // General Study Skills & Productivity
   {
     id: 'b1',
     title: 'How to Build a Study Schedule That Actually Works',
     author: 'Ali Abdaal',
-    source: 'aliabdaal.com',
-    url: 'https://aliabdaal.com/how-to-study/',
-    description: 'Evidence-backed strategies for creating a sustainable, effective study schedule based on spaced repetition and active recall.',
-    category: 'Study Skills',
+    source: 'medium.com/productivity',
+    url: 'https://medium.com/@aliabdaal/how-to-study-effectively-spaced-repetition-3a5f80e921d3',
+    description: 'Evidence-backed strategies for creating a sustainable study schedule based on active recall.',
+    category: 'Medium Blog',
     readTime: '7 min read',
     emoji: '📅',
     subjects: ['all'],
-    levels: ['beginner', 'intermediate']
+    domains: ['Tutorial', 'Exam Preparation'],
+    isMedium: true
   },
   {
     id: 'b2',
-    title: 'The Feynman Technique: The Best Way to Learn Anything',
+    title: 'The Feynman Technique: Learn Concepts Deeply',
     author: 'James Clear',
-    source: 'fs.blog',
-    url: 'https://fs.blog/feynman-technique/',
-    description: 'Nobel Prize-winning physicist Richard Feynman\'s method for understanding complex concepts by simplifying them to basics.',
-    category: 'Learning Methods',
+    source: 'medium.com/learning',
+    url: 'https://medium.com/personal-growth/the-feynman-technique-learn-concepts-deeply-84cd29007c1',
+    description: 'Richard Feynman\'s iconic framework to simplify complex concepts and identify your knowledge gaps.',
+    category: 'Medium Blog',
     readTime: '6 min read',
     emoji: '🧠',
     subjects: ['all'],
-    levels: ['beginner', 'intermediate', 'advanced']
-  },
-  {
-    id: 'b3',
-    title: 'Study Tips for Exam Season',
-    author: 'Khan Academy',
-    source: 'blog.khanacademy.org',
-    url: 'https://blog.khanacademy.org/',
-    description: 'Practical exam preparation advice from Khan Academy educators, including time management and stress reduction techniques.',
-    category: 'Exam Prep',
-    readTime: '5 min read',
-    emoji: '📝',
-    subjects: ['all'],
-    levels: ['beginner']
+    domains: ['Tutorial', 'Crash Course'],
+    isMedium: true
   },
   // Computer Science & Software
   {
-    id: 'cs1',
-    title: 'How to Think Like a Computer Scientist',
-    author: 'Allen Downey',
-    source: 'greenteapress.com',
-    url: 'https://greenteapress.com/wp/think-python-2e/',
-    description: 'An excellent introduction to computational thinking, algorithms, and logical structural design using Python.',
-    category: 'Computer Science',
-    readTime: '15 min read',
-    emoji: '💻',
-    subjects: ['Computer Science', 'Data Science', 'Machine Learning'],
-    levels: ['beginner']
+    id: 'cs_rp1',
+    title: 'On Computable Numbers, with an Application to the Entscheidungsproblem',
+    author: 'Alan M. Turing (1936)',
+    source: 'arXiv.org / OpenAccess',
+    url: 'https://www.cs.virginia.edu/~robins/Turing_Paper_1936.pdf',
+    description: 'The foundational open-source research paper that established the concept of the Turing Machine and universal computing models.',
+    category: 'Research Paper',
+    readTime: '36 pages',
+    emoji: '🔬',
+    subjects: ['Computer Science'],
+    domains: ['Full Course Lecture', 'Problem Solving'],
+    isResearchPaper: true
   },
   {
-    id: 'cs2',
+    id: 'cs_med1',
     title: 'Demystifying Data Structures and Algorithms',
-    author: 'BaseCS',
+    author: 'Vaidehi Joshi',
     source: 'medium.com/basecs',
-    url: 'https://medium.com/basecs',
-    description: 'A beautifully animated, step-by-step breakdown of lists, heaps, sorting, and algorithmic complexity maps.',
-    category: 'Algorithms',
+    url: 'https://medium.com/basecs/deep-diving-into-data-structures-c3c2f0f498b',
+    description: 'A beautifully structured, animated guide mapping array lists, binary search trees, and complex graph travels.',
+    category: 'Medium Blog',
     readTime: '8 min read',
-    emoji: '🌲',
+    emoji: '🌐',
     subjects: ['Computer Science', 'Web Development'],
-    levels: ['intermediate']
-  },
-  {
-    id: 'cs3',
-    title: 'The Road to System Design Mastery',
-    author: 'ByteByteGo',
-    source: 'bytebytego.com',
-    url: 'https://bytebytego.com/',
-    description: 'Advanced guides covering load balancers, caching, distributed databases, and high-availability architecture scales.',
-    category: 'System Design',
-    readTime: '12 min read',
-    emoji: '⚡',
-    subjects: ['Computer Science', 'Electrical Engineering'],
-    levels: ['advanced']
-  },
-  // Mathematics & Calculus
-  {
-    id: 'math1',
-    title: 'Intuitive Guide to Calculus and Limits',
-    author: 'BetterExplained',
-    source: 'betterexplained.com',
-    url: 'https://betterexplained.com/calculus/',
-    description: 'An outstanding visual review explaining why calculus derivative rules exist and how to visualize them intuitively.',
-    category: 'Mathematics',
-    readTime: '10 min read',
-    emoji: '📐',
-    subjects: ['Mathematics', 'Physics', 'Mechanical Engineering'],
-    levels: ['beginner', 'intermediate']
-  },
-  {
-    id: 'math2',
-    title: 'Why Abstract Algebra is Secretly Everywhere',
-    author: '3Blue1Brown',
-    source: '3blue1brown.com',
-    url: 'https://www.3blue1brown.com/',
-    description: 'A beautiful geometric guide to symmetry groups, rings, vector dimensions, and higher algebraic properties.',
-    category: 'Mathematics',
-    readTime: '9 min read',
-    emoji: '🧮',
-    subjects: ['Mathematics', 'Machine Learning'],
-    levels: ['advanced']
-  },
-  // Physics & Mechanics
-  {
-    id: 'phys1',
-    title: 'The Grand Design: Exploring Space-Time Curves',
-    author: 'Stephen Hawking',
-    source: 'scientificamerican.com',
-    url: 'https://www.scientificamerican.com/',
-    description: 'Exploring Einstein\'s relativity theorems, space curves, gravity waves, and quantum field behaviors simply.',
-    category: 'Physics',
-    readTime: '11 min read',
-    emoji: '🌌',
-    subjects: ['Physics', 'Geography'],
-    levels: ['beginner', 'intermediate']
-  },
-  {
-    id: 'phys2',
-    title: 'Quantum Computing and Superposition Voids',
-    author: 'IBM Quantum',
-    source: 'ibm.com/quantum',
-    url: 'https://www.ibm.com/topics/quantum-computing',
-    description: 'An advanced deep dive into qubits, logic gates, entanglement matrices, and cryogenic quantum processing units.',
-    category: 'Physics',
-    readTime: '14 min read',
-    emoji: '⚛️',
-    subjects: ['Physics', 'Computer Science', 'Electrical Engineering'],
-    levels: ['advanced']
-  },
-  // Machine Learning & Data Science
-  {
-    id: 'ml1',
-    title: 'Introduction to Machine Learning Pipelines',
-    author: 'Scikit-Learn Team',
-    source: 'scikit-learn.org',
-    url: 'https://scikit-learn.org/stable/tutorial/index.html',
-    description: 'Step-by-step introduction to training estimators, splitting folds, predicting validation labels, and scaling traits.',
-    category: 'Machine Learning',
-    readTime: '8 min read',
-    emoji: '🤖',
-    subjects: ['Machine Learning', 'Data Science'],
-    levels: ['beginner', 'intermediate']
-  },
-  {
-    id: 'ml2',
-    title: 'Deep Learning Mastery: Neural Network Backprop',
-    author: 'Andrej Karpathy',
-    source: 'karpathy.github.io',
-    url: 'https://karpathy.github.io/',
-    description: 'Understanding loss gradients, weights matrices, attention vectors, and backpropagation pathways manually.',
-    category: 'Machine Learning',
-    readTime: '18 min read',
-    emoji: '🧠',
-    subjects: ['Machine Learning', 'Data Science'],
-    levels: ['advanced']
+    domains: ['Tutorial', 'Problem Solving', 'Exam Preparation'],
+    isMedium: true
   },
   // Web Development
   {
-    id: 'web1',
-    title: 'Modern CSS Layouts: Flexbox and Grid Mastery',
-    author: 'Rachel Andrew',
-    source: 'smashingmagazine.com',
-    url: 'https://www.smashingmagazine.com/2020/01/understanding-css-grid-flexbox/',
-    description: 'Complete guide to responsive grid margins, flex directions, absolute positions, and media viewport scales.',
-    category: 'Web Development',
-    readTime: '8 min read',
+    id: 'web_rp1',
+    title: 'The Anatomy of a Large-Scale Hypertextual Web Search Engine',
+    author: 'Sergey Brin & Lawrence Page (Stanford)',
+    source: 'infolab.stanford.edu',
+    url: 'http://infolab.stanford.edu/~backrub/google.pdf',
+    description: 'The iconic open-source Stanford research paper describing the original PageRank system and early search web crawls.',
+    category: 'Research Paper',
+    readTime: '18 pages',
+    emoji: '🔬',
+    subjects: ['Web Development', 'Computer Science'],
+    domains: ['Full Course Lecture', 'Problem Solving'],
+    isResearchPaper: true
+  },
+  {
+    id: 'web_med1',
+    title: 'CSS Grid vs Flexbox: A Pragmatic Layout Guide',
+    author: 'Ahmad Shadeed',
+    source: 'medium.com/ux-planet',
+    url: 'https://medium.com/ux-planet/css-grid-vs-flexbox-a-practical-guide-b1d5cbf0662d',
+    description: 'Real-world visual walkthrough of responsive margins, viewport alignments, layouts, and relative positioning.',
+    category: 'Medium Blog',
+    readTime: '9 min read',
     emoji: '🌐',
     subjects: ['Web Development'],
-    levels: ['beginner', 'intermediate']
+    domains: ['Tutorial', 'Lab / Practical'],
+    isMedium: true
+  },
+  // Machine Learning
+  {
+    id: 'ml_rp1',
+    title: 'Attention Is All You Need',
+    author: 'Ashish Vaswani et al. (Google Brain)',
+    source: 'arXiv.org',
+    url: 'https://arxiv.org/abs/1706.03762',
+    description: 'The seminal transformer research paper replacing recurrent architectures with self-attention networks.',
+    category: 'Research Paper',
+    readTime: '15 pages',
+    emoji: '🔬',
+    subjects: ['Machine Learning', 'Data Science', 'Computer Science'],
+    domains: ['Full Course Lecture', 'Problem Solving'],
+    isResearchPaper: true
   },
   {
-    id: 'web2',
-    title: 'React Server Components: Under the Hood Architecture',
-    author: 'Dan Abramov',
-    source: 'overreacted.io',
-    url: 'https://overreacted.io/',
-    description: 'Deep dive into stream renders, client borders, state dehydration, and React 19 hydration lifecycles.',
-    category: 'Web Development',
-    readTime: '13 min read',
-    emoji: '⚛️',
-    subjects: ['Web Development', 'Computer Science'],
-    levels: ['advanced']
+    id: 'ml_med1',
+    title: 'The Essential Guide to Neural Networks and Backpropagation',
+    author: 'Towards Data Science',
+    source: 'towardsdatascience.com',
+    url: 'https://towardsdatascience.com/understanding-backpropagation-ab6c3a8d8e52',
+    description: 'An interactive mathematical walkthrough of multi-layer perceptrons, active functions, and gradient steps.',
+    category: 'Medium Blog',
+    readTime: '12 min read',
+    emoji: '🌐',
+    subjects: ['Machine Learning', 'Data Science'],
+    domains: ['Tutorial', 'Crash Course', 'Problem Solving'],
+    isMedium: true
   },
-  // Engineering (Mechanical & Electrical)
+  // Mathematics
   {
-    id: 'eng1',
-    title: 'All About Circuits Reference Library',
-    author: 'EE Experts',
-    source: 'allaboutcircuits.com',
-    url: 'https://www.allaboutcircuits.com/',
-    description: 'Foundational electronics references covering passive components, op-amps, feedback loops, and wave filters.',
-    category: 'Electrical Engineering',
-    readTime: 'Reference',
-    emoji: '🔌',
-    subjects: ['Electrical Engineering', 'Physics'],
-    levels: ['beginner', 'intermediate', 'advanced']
+    id: 'math_rp1',
+    title: 'A Symbolic Analysis of Relay and Switching Circuits',
+    author: 'Claude E. Shannon (MIT, 1938)',
+    source: 'dspace.mit.edu',
+    url: 'https://dspace.mit.edu/handle/1721.1/11173',
+    description: 'The legendary master\'s research paper applying Boolean algebra to electric switch circuits, establishing digital logic.',
+    category: 'Research Paper',
+    readTime: '45 pages',
+    emoji: '🔬',
+    subjects: ['Mathematics', 'Computer Science'],
+    domains: ['Full Course Lecture', 'Problem Solving'],
+    isResearchPaper: true
   },
   {
-    id: 'eng2',
-    title: 'Engineers Edge: Structural Stress Formulas',
-    author: 'Mech Engineering Team',
-    source: 'engineersedge.com',
-    url: 'https://www.engineersedge.com/',
-    description: 'Comprehensive guides for structural dynamics, truss stresses, heat transfer, and mechanical cad alignments.',
-    category: 'Mechanical Engineering',
-    readTime: 'Reference',
-    emoji: '⚙️',
-    subjects: ['Mechanical Engineering', 'Physics'],
-    levels: ['beginner', 'intermediate', 'advanced']
+    id: 'math_med1',
+    title: 'Linear Algebra Visualized: Eigenvalues and Eigenvectors',
+    author: '3Blue1Brown Team',
+    source: 'medium.com/math',
+    url: 'https://medium.com/@3blue1brown/linear-algebra-visualized-eigenvalues-6e42b291d293',
+    description: 'A beautiful visual exposition of vector shears, space dimension stretches, and coordinate transforms.',
+    category: 'Medium Blog',
+    readTime: '9 min read',
+    emoji: '🌐',
+    subjects: ['Mathematics', 'Data Science', 'Machine Learning'],
+    domains: ['Tutorial', 'Crash Course'],
+    isMedium: true
+  },
+  // Physics
+  {
+    id: 'phys_rp1',
+    title: 'On the Electrodynamics of Moving Bodies (Special Relativity)',
+    author: 'Albert Einstein (1905)',
+    source: 'fourmilab.ch / OpenAccess',
+    url: 'https://www.fourmilab.ch/etexts/einstein/specrel/specrel.pdf',
+    description: 'Einstein\'s original open-access research paper redefining space-time intervals, coordinate transformations, and light velocities.',
+    category: 'Research Paper',
+    readTime: '23 pages',
+    emoji: '🔬',
+    subjects: ['Physics'],
+    domains: ['Full Course Lecture', 'Problem Solving'],
+    isResearchPaper: true
+  },
+  {
+    id: 'phys_med1',
+    title: 'Quantum Mechanics Explained for Beginners',
+    author: 'Physics Network',
+    source: 'medium.com/physics',
+    url: 'https://medium.com/physics-made-simple/quantum-mechanics-explained-for-beginners-a1d3bcbf9e6a',
+    description: 'An interactive visual guide covering superposition thresholds, qubits, wave particle dualities, and spin orbits.',
+    category: 'Medium Blog',
+    readTime: '11 min read',
+    emoji: '🌐',
+    subjects: ['Physics', 'Electrical Engineering'],
+    domains: ['Tutorial', 'Crash Course'],
+    isMedium: true
+  },
+  // Biology
+  {
+    id: 'bio_rp1',
+    title: 'Molecular Structure of Nucleic Acids (DNA Structure)',
+    author: 'Watson J.D. & Crick F.H.C. (1953)',
+    source: 'nature.com / OpenAccess',
+    url: 'https://www.nature.com/articles/171737a0.pdf',
+    description: 'The landmark open-access paper presenting the double-helix model of DNA molecule structures.',
+    category: 'Research Paper',
+    readTime: '2 pages',
+    emoji: '🔬',
+    subjects: ['Biology', 'Chemistry'],
+    domains: ['Full Course Lecture', 'Lab / Practical'],
+    isResearchPaper: true
+  },
+  // Economics
+  {
+    id: 'econ_rp1',
+    title: 'A Theory of Production (Cobbs-Douglas Function)',
+    author: 'Charles W. Cobb & Paul H. Douglas (1928)',
+    source: 'aeaweb.org / OpenAccess',
+    url: 'https://www.aeaweb.org/aer/top20/18.1.139-165.pdf',
+    description: 'The classical open-access research paper mathematically relating production outputs to capital and labor factors.',
+    category: 'Research Paper',
+    readTime: '27 pages',
+    emoji: '🔬',
+    subjects: ['Economics'],
+    domains: ['Full Course Lecture', 'Problem Solving'],
+    isResearchPaper: true
   }
 ];
 
 const getRecommendedBlogs = (selectedSubject, selectedDomain, selectedLevel) => {
   const filtered = BLOG_ARTICLES_POOL.filter(blog => {
-    // Subject filter
+    // 1. Subject filter
     const matchesSubject = !selectedSubject || 
       selectedSubject === 'Custom' ||
       blog.subjects.includes('all') || 
       blog.subjects.some(s => s.toLowerCase() === selectedSubject.toLowerCase());
     
-    // Level filter
-    const matchesLevel = !selectedLevel || 
-      blog.levels.includes(selectedLevel.toLowerCase());
+    // 2. Domain/Format filter
+    const matchesDomain = !selectedDomain || 
+      blog.domains.includes('all') ||
+      blog.domains.some(d => d.toLowerCase() === selectedDomain.toLowerCase());
 
-    return matchesSubject && matchesLevel;
+    return matchesSubject && matchesDomain;
   });
 
   if (filtered.length > 0) return filtered;
-  // Fallback to general productivity/study tips
+  // Fallback to general study skills that match domain or are general
   return BLOG_ARTICLES_POOL.filter(b => b.subjects.includes('all'));
 };
 
@@ -930,7 +921,9 @@ const Resources = () => {
               >
                 <div className="blog-card-header">
                   <span className="blog-emoji">{article.emoji}</span>
-                  <span className="blog-category-badge">{article.category}</span>
+                  <span className={`blog-category-badge ${article.isResearchPaper ? 'research-badge' : article.isMedium ? 'medium-badge' : ''}`}>
+                    {article.isResearchPaper ? '🔬 Research Paper' : article.isMedium ? '🌐 Medium Blog' : article.category}
+                  </span>
                 </div>
                 <h3 className="blog-title">{article.title}</h3>
                 <p className="blog-desc">{article.description}</p>
@@ -945,8 +938,9 @@ const Resources = () => {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="btn-primary res-watch-btn"
+                      style={article.isMedium ? { background: 'linear-gradient(135deg, #00ab6c 0%, #008f58 100%)', borderColor: '#008f58' } : article.isResearchPaper ? { background: 'linear-gradient(135deg, #4f46e5 0%, #3730a3 100%)', borderColor: '#3730a3' } : {}}
                     >
-                      📖 Read Article
+                      {article.isResearchPaper ? '🔬 Read Research Paper' : article.isMedium ? '📖 Read on Medium' : '📖 Read Article'}
                     </a>
                     <button
                       className="btn-secondary res-share-btn"
