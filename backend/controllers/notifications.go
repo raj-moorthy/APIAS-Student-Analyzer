@@ -1,9 +1,10 @@
-package controllers
-
 import (
+	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"net/smtp"
 	"time"
@@ -72,8 +73,17 @@ func loadSMTPConfig() (host, port, user, pass string, err error) {
 // sendMail is the internal helper used by all notification handlers
 func sendMail(to, subject, htmlBody string) error {
 	host, port, user, pass, err := loadSMTPConfig()
-	if err != nil || host == "" || user == "" {
-		return fmt.Errorf("SMTP not configured: %v", err)
+	if err != nil || host == "" {
+		return fmt.Errorf("mail service not configured: %v", err)
+	}
+
+	// Support modern HTTP-based Resend service to completely bypass SMTP port blocks on Render!
+	if host == "resend" || host == "api.resend.com" {
+		return sendMailResend(to, subject, htmlBody, pass, user)
+	}
+
+	if user == "" {
+		return fmt.Errorf("SMTP user not configured")
 	}
 
 	auth := smtp.PlainAuth("", user, pass, host)
@@ -81,11 +91,100 @@ func sendMail(to, subject, htmlBody string) error {
 		user, to, subject, htmlBody)
 
 	addr := fmt.Sprintf("%s:%s", host, port)
-	if err := smtp.SendMail(addr, auth, user, []string{to}, []byte(msg)); err != nil {
-		log.Printf("[SMTP] send error to %s: %v", to, err)
+
+	// Dial with a 3-second timeout so we don't hang if port is blocked by cloud provider (e.g. Render)
+	conn, err := net.DialTimeout("tcp", addr, 3*time.Second)
+	if err != nil {
+		log.Printf("[SMTP] connection timeout/fail to %s: %v (Port is likely blocked on host)", addr, err)
+		return fmt.Errorf("SMTP connection failed (port blocked): %w", err)
+	}
+	defer conn.Close()
+
+	client, err := smtp.NewClient(conn, host)
+	if err != nil {
 		return err
 	}
+	defer client.Quit()
+
+	if err = client.StartTLS(&tls.Config{ServerName: host}); err != nil {
+		return err
+	}
+
+	if err = client.Auth(auth); err != nil {
+		return err
+	}
+
+	if err = client.Mail(user); err != nil {
+		return err
+	}
+
+	if err = client.Rcpt(to); err != nil {
+		return err
+	}
+
+	w, err := client.Data()
+	if err != nil {
+		return err
+	}
+
+	_, err = w.Write([]byte(msg))
+	if err != nil {
+		return err
+	}
+
+	err = w.Close()
+	if err != nil {
+		return err
+	}
+
 	log.Printf("[SMTP] email sent → %s | %s", to, subject)
+	return nil
+}
+
+// sendMailResend handles sending emails via Resend's HTTP API (port 443, never blocked)
+func sendMailResend(to, subject, htmlBody, apiKey, fromUser string) error {
+	if apiKey == "" {
+		return fmt.Errorf("resend API key is missing")
+	}
+	from := fromUser
+	if from == "" {
+		from = "onboarding@resend.dev"
+	}
+
+	payload := map[string]interface{}{
+		"from":    from,
+		"to":      []string{to},
+		"subject": subject,
+		"html":    htmlBody,
+	}
+
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("POST", "https://api.resend.com/emails", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		var errResponse map[string]interface{}
+		json.NewDecoder(resp.Body).Decode(&errResponse)
+		return fmt.Errorf("resend API returned status %d: %v", resp.StatusCode, errResponse)
+	}
+
+	log.Printf("[Resend] Email sent successfully to %s", to)
 	return nil
 }
 
