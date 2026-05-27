@@ -254,6 +254,206 @@ const getRecommendedBlogs = (selectedSubject, selectedDomain, selectedLevel) => 
   return BLOG_ARTICLES_POOL.filter(b => b.subjects.includes('all'));
 };
 
+const VIDEO_RESOURCES_POOL = [
+  // Computer Science / Web Dev / Data Science / ML
+  {
+    id: 'CS_TUT_1',
+    title: 'Crash Course Computer Science',
+    channel: 'CrashCourse',
+    views: '4.2M views',
+    duration: '11:45',
+    thumbnail: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=360&q=80',
+    url: 'https://www.youtube.com/watch?v=O5nskjZ_GoI',
+    subject: 'Computer Science',
+    domain: 'Crash Course'
+  },
+  {
+    id: 'CS_LEC_1',
+    title: 'Introduction to Computer Science and Programming',
+    channel: 'MIT OpenCourseWare',
+    views: '8.5M views',
+    duration: '50:23',
+    thumbnail: 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=360&q=80',
+    url: 'https://www.youtube.com/watch?v=kQt2LnduKug',
+    subject: 'Computer Science',
+    domain: 'Full Course Lecture'
+  },
+  {
+    id: 'WEB_TUT_1',
+    title: 'HTML & CSS Full Course for Beginners',
+    channel: 'SuperSimpleDev',
+    views: '12M views',
+    duration: '6:12:00',
+    thumbnail: 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=360&q=80',
+    url: 'https://www.youtube.com/watch?v=G3e-cpL7ofc',
+    subject: 'Web Development',
+    domain: 'Tutorial'
+  },
+  {
+    id: 'WEB_CRASH_1',
+    title: 'React JS Crash Course for Beginners',
+    channel: 'Traversy Media',
+    views: '3.1M views',
+    duration: '1:42:15',
+    thumbnail: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=360&q=80',
+    url: 'https://www.youtube.com/watch?v=w7ejDZ8SWv8',
+    subject: 'Web Development',
+    domain: 'Crash Course'
+  },
+  {
+    id: 'ML_TUT_1',
+    title: 'Machine Learning Course for Beginners',
+    channel: 'freeCodeCamp.org',
+    views: '2.8M views',
+    duration: '2:40:00',
+    thumbnail: 'https://images.unsplash.com/photo-1527474305487-b87b222841cc?w=360&q=80',
+    url: 'https://www.youtube.com/watch?v=GwIo3gTOB3I',
+    subject: 'Machine Learning',
+    domain: 'Tutorial'
+  },
+  {
+    id: 'ML_LEC_1',
+    title: 'CS229: Machine Learning Lecture 1 (Stanford)',
+    channel: 'Stanford Online',
+    views: '4.9M views',
+    duration: '1:16:00',
+    thumbnail: 'https://images.unsplash.com/photo-1501504905252-473c47e087f8?w=360&q=80',
+    url: 'https://www.youtube.com/watch?v=jGwO_b-YFfk',
+    subject: 'Machine Learning',
+    domain: 'Full Course Lecture'
+  },
+  // Mathematics
+  {
+    id: 'MATH_TUT_1',
+    title: 'The Map of Mathematics',
+    channel: 'Domain of Science',
+    views: '9.2M views',
+    duration: '11:06',
+    thumbnail: 'https://images.unsplash.com/photo-1509228468518-180dd4864904?w=360&q=80',
+    url: 'https://www.youtube.com/watch?v=OmJ-4B-mS-Y',
+    subject: 'Mathematics',
+    domain: 'Tutorial'
+  },
+  {
+    id: 'MATH_CRASH_1',
+    title: 'Calculus 1 Full Course',
+    channel: 'Professor Leonard',
+    views: '3.5M views',
+    duration: '2:15:30',
+    thumbnail: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=360&q=80',
+    url: 'https://www.youtube.com/watch?v=fYyAMM7KAdY',
+    subject: 'Mathematics',
+    domain: 'Crash Course'
+  },
+  {
+    id: 'MATH_SOLVE_1',
+    title: 'Hardest Calculus Problems Solved Step-by-Step',
+    channel: 'Blackpenredpen',
+    views: '1.2M views',
+    duration: '45:10',
+    thumbnail: 'https://images.unsplash.com/photo-1453733190148-c44698c26588?w=360&q=80',
+    url: 'https://www.youtube.com/watch?v=83B6fHn2_iE',
+    subject: 'Mathematics',
+    domain: 'Problem Solving'
+  },
+  // Physics
+  {
+    id: 'PHYS_TUT_1',
+    title: 'The Map of Physics',
+    channel: 'Domain of Science',
+    views: '6.4M views',
+    duration: '14:20',
+    thumbnail: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=360&q=80',
+    url: 'https://www.youtube.com/watch?v=ZihywtixUYo',
+    subject: 'Physics',
+    domain: 'Tutorial'
+  },
+  {
+    id: 'PHYS_CRASH_1',
+    title: 'AP Physics 1 Review - Session 1',
+    channel: 'Advanced Placement',
+    views: '920K views',
+    duration: '42:15',
+    thumbnail: 'https://images.unsplash.com/photo-1507668077129-56e32842fceb?w=360&q=80',
+    url: 'https://www.youtube.com/watch?v=1tJk905s61k',
+    subject: 'Physics',
+    domain: 'Exam Preparation'
+  },
+  // Chemistry
+  {
+    id: 'CHEM_TUT_1',
+    title: 'General Chemistry 1 Review Study Guide',
+    channel: 'The Organic Chemistry Tutor',
+    views: '2.5M views',
+    duration: '2:10:00',
+    thumbnail: 'https://images.unsplash.com/photo-1532187863486-abf9d39d66e8?w=360&q=80',
+    url: 'https://www.youtube.com/watch?v=mDae28Q1K9k',
+    subject: 'Chemistry',
+    domain: 'Tutorial'
+  },
+  {
+    id: 'CHEM_CRASH_1',
+    title: 'Organic Chemistry Introduction Crash Course',
+    channel: 'CrashCourse',
+    views: '1.9M views',
+    duration: '12:45',
+    thumbnail: 'https://images.unsplash.com/photo-1603126857599-f6e157fa2fe6?w=360&q=80',
+    url: 'https://www.youtube.com/watch?v=U3yG7c9iW0M',
+    subject: 'Chemistry',
+    domain: 'Crash Course'
+  },
+  // Biology
+  {
+    id: 'BIO_TUT_1',
+    title: 'Introduction to Cells: The Grand Cell Tour',
+    channel: 'Amoeba Sisters',
+    views: '6.8M views',
+    duration: '9:22',
+    thumbnail: 'https://images.unsplash.com/photo-1530026405186-ed1ea0ac7a63?w=360&q=80',
+    url: 'https://www.youtube.com/watch?v=8IlzKri08kk',
+    subject: 'Biology',
+    domain: 'Tutorial'
+  },
+  // Economics
+  {
+    id: 'ECON_TUT_1',
+    title: 'Microeconomics Crash Course Lecture 1',
+    channel: 'Jacob Clifford',
+    views: '1.5M views',
+    duration: '14:10',
+    thumbnail: 'https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?w=360&q=80',
+    url: 'https://www.youtube.com/watch?v=2YULdjmUtS8',
+    subject: 'Economics',
+    domain: 'Crash Course'
+  }
+];
+
+const getRecommendedVideos = (selectedSubject, selectedDomain, backendVideos) => {
+  const localMatches = VIDEO_RESOURCES_POOL.filter(vid => {
+    const matchesSubject = !selectedSubject || 
+      selectedSubject === 'Custom' ||
+      vid.subject.toLowerCase() === selectedSubject.toLowerCase();
+    const matchesDomain = !selectedDomain || 
+      vid.domain.toLowerCase() === selectedDomain.toLowerCase();
+    return matchesSubject && matchesDomain;
+  });
+
+  const matchedBackend = (backendVideos || []).map(bv => ({
+    id: bv.id,
+    title: bv.title,
+    channel: bv.channel,
+    views: bv.views,
+    duration: bv.duration,
+    thumbnail: bv.thumbnail,
+    url: bv.url || `https://www.youtube.com/watch?v=${bv.id}`
+  }));
+
+  const combined = [...localMatches, ...matchedBackend.filter(bv => !localMatches.some(lm => lm.title.toLowerCase() === bv.title.toLowerCase()))];
+  
+  if (combined.length > 0) return combined;
+  return VIDEO_RESOURCES_POOL.slice(0, 4);
+};
+
 // ─── Share Resource Modal ───────────────────────────────────────────────────
 const ShareModal = ({ resource, onClose, user }) => {
   const [toEmail, setToEmail] = useState('');
@@ -613,69 +813,72 @@ const Resources = () => {
       </div>
 
       {/* ── Videos Tab ── */}
-      {activeTab === 'videos' && (
-        <>
-          {error && <div className="alert alert-error">{error}</div>}
-          {loading ? (
-            <div className="res-loader">
-              <div className="res-loader-spinner" />
-              <span>Searching YouTube for top-rated educational content…</span>
-            </div>
-          ) : youtubeVideos.length > 0 ? (
-            <>
-              <div className="res-results-header">
-                <h3>📺 Found {youtubeVideos.length} Educational Videos</h3>
-                <span className="res-results-tag">Sorted by views &amp; relevance</span>
+      {activeTab === 'videos' && (() => {
+        const displayedVideos = getRecommendedVideos(subject, domain, youtubeVideos);
+        return (
+          <>
+            {error && <div className="alert alert-error">{error}</div>}
+            {loading ? (
+              <div className="res-loader">
+                <div className="res-loader-spinner" />
+                <span>Searching YouTube for top-rated educational content…</span>
               </div>
-              <div className="res-video-grid">
-                {youtubeVideos.map((video, idx) => (
-                  <div
-                    className="res-video-card glassmorphism"
-                    key={video.id}
-                    style={{ animationDelay: `${idx * 70}ms` }}
-                  >
-                    <div className="res-thumb-wrap">
-                      <img src={video.thumbnail} alt={video.title} className="res-thumb-img" />
-                      <span className="res-duration-pill">{video.duration}</span>
-                    </div>
-                    <div className="res-video-body">
-                      <span className="res-channel-name">{video.channel}</span>
-                      <h4 className="res-video-title" title={video.title}>{video.title}</h4>
-                      <p className="res-video-desc">{video.description}</p>
-                      <div className="res-video-footer">
-                        <span className="res-views-badge">🔥 {video.views}</span>
-                        <div className="res-video-actions">
-                          <a
-                            href={getSafeRedirectUrl(getYouTubeUrl(video), video.title)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="btn-primary res-watch-btn"
-                          >
-                            ▶ Watch on YouTube
-                          </a>
-                          <button
-                            className="btn-secondary res-share-btn"
-                            onClick={() => setShareModal({ title: video.title, url: getSafeRedirectUrl(getYouTubeUrl(video), video.title) })}
-                            title="Share with classmate"
-                          >
-                            🤝 Share
-                          </button>
+            ) : displayedVideos.length > 0 ? (
+              <>
+                <div className="res-results-header">
+                  <h3>📺 Found {displayedVideos.length} Educational Videos</h3>
+                  <span className="res-results-tag">Sorted by views &amp; relevance</span>
+                </div>
+                <div className="res-video-grid">
+                  {displayedVideos.map((video, idx) => (
+                    <div
+                      className="res-video-card glassmorphism"
+                      key={video.id}
+                      style={{ animationDelay: `${idx * 70}ms` }}
+                    >
+                      <div className="res-thumb-wrap">
+                        <img src={video.thumbnail} alt={video.title} className="res-thumb-img" />
+                        <span className="res-duration-pill">{video.duration}</span>
+                      </div>
+                      <div className="res-video-body">
+                        <span className="res-channel-name">{video.channel}</span>
+                        <h4 className="res-video-title" title={video.title}>{video.title}</h4>
+                        <p className="res-video-desc">{video.description || 'Watch highly popular peer lectures and study reviews on this topic.'}</p>
+                        <div className="res-video-footer">
+                          <span className="res-views-badge">🔥 {video.views}</span>
+                          <div className="res-video-actions">
+                            <a
+                              href={getSafeRedirectUrl(video.url || getYouTubeUrl(video), video.title)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="btn-primary res-watch-btn"
+                            >
+                              ▶ Watch on YouTube
+                            </a>
+                            <button
+                              className="btn-secondary res-share-btn"
+                              onClick={() => setShareModal({ title: video.title, url: getSafeRedirectUrl(video.url || getYouTubeUrl(video), video.title) })}
+                              title="Share with classmate"
+                            >
+                              🤝 Share
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+              </>
+            ) : searched ? (
+              <div className="res-empty">
+                <div className="res-empty-icon">🎓</div>
+                <h3>No matching videos found</h3>
+                <p>Try broadening your search keywords or selecting a different subject.</p>
               </div>
-            </>
-          ) : searched ? (
-            <div className="res-empty">
-              <div className="res-empty-icon">🎓</div>
-              <h3>No matching videos found</h3>
-              <p>Try broadening your search keywords or selecting a different subject.</p>
-            </div>
-          ) : null}
-        </>
-      )}
+            ) : null}
+          </>
+        );
+      })()}
 
       {/* ── Blogs Tab ── */}
       {activeTab === 'blogs' && (

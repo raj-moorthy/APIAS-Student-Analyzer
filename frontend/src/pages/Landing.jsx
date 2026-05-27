@@ -80,20 +80,80 @@ const Landing = () => {
   ]);
 
   useEffect(() => {
+    // 1. Get the custom user-submitted feedbacks (limit to last 3 given by the user!)
     const saved = localStorage.getItem('apais_scholar_feedback');
+    let userFeedbacks = [];
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setScholarFeedbacks(prev => {
-            const filtered = prev.filter(f => !parsed.some(p => p.name === f.name));
-            return [...parsed, ...filtered];
-          });
+        if (Array.isArray(parsed)) {
+          userFeedbacks = parsed.slice(0, 3);
         }
       } catch (err) {
         console.error("Failed to parse feedbacks from localStorage", err);
       }
     }
+
+    // 2. Base pool of default scholar testimonials to rotate day by day (5 testimonials)
+    const defaultPool = [
+      {
+        text: "Implementing the APAIS analytics system has completely overhauled how I schedule my exams. The GPA booster modules pinpoint exactly where my study voids are.",
+        name: "Amelia Chen",
+        role: "Computer Science Major, Sem 6",
+        avatar: "AC",
+        rating: 5
+      },
+      {
+        text: "The YouTube dynamic learning interface is outstanding. I typed my physics curriculum and got immediate, highly popular videos that helped me score 95% on my midterms.",
+        name: "David Sterling",
+        role: "Biochemistry Major, Sem 4",
+        avatar: "DS",
+        rating: 5
+      },
+      {
+        text: "As an administrator, having a predictive warning engine helps us target students struggling with specific courses early enough to offer beneficial help.",
+        name: "Dr. Marcus Vance",
+        role: "Dean of Academic Affairs, Stanford L&D",
+        avatar: "MV",
+        rating: 5
+      },
+      {
+        text: "The AI study planner is like having an Ivy League tutor in my pocket. My preparation productivity has literally doubled within two weeks.",
+        name: "Sarah Jenkins",
+        role: "Bioengineering Major, Sem 2",
+        avatar: "SJ",
+        rating: 5
+      },
+      {
+        text: "APAIS makes course analytics fun and accessible! I can upload my scores and see interactive trajectory projections instantly.",
+        name: "Ryan Gallagher",
+        role: "Finance Major, Sem 5",
+        avatar: "RG",
+        rating: 5
+      }
+    ];
+
+    // 3. Rotate the default pool day by day using the current day of the month!
+    const dayOfMonth = new Date().getDate(); // 1 to 31
+    const rotatedDefaults = [...defaultPool];
+    const shiftAmount = dayOfMonth % defaultPool.length;
+    for (let i = 0; i < shiftAmount; i++) {
+      const first = rotatedDefaults.shift();
+      rotatedDefaults.push(first);
+    }
+
+    // 4. Merge: Always start with the last 3 user-submitted feedbacks
+    const merged = [...userFeedbacks];
+    
+    // Fill the remaining spots up to a total of 5 displayed cards
+    for (const item of rotatedDefaults) {
+      if (merged.length >= 5) break;
+      if (!merged.some(m => m.name === item.name)) {
+        merged.push(item);
+      }
+    }
+
+    setScholarFeedbacks(merged);
   }, []);
 
   // Stats Section Trigger
