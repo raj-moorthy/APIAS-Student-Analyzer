@@ -428,6 +428,23 @@ const VIDEO_RESOURCES_POOL = [
   }
 ];
 
+const SUBJECT_KEYWORDS = {
+  'mathematics': ['math', 'calc', 'algebra', 'geometry', 'equation', 'number', 'matrix', '3blue1brown', 'leonard', 'derivat', 'integ', 'limit', 'trig'],
+  'physics': ['physics', 'quantum', 'mechanic', 'wave', 'thermo', 'gravity', 'force', 'energy', 'einstein', 'relativ', 'motion', 'light', 'electromag'],
+  'chemistry': ['chem', 'organic', 'atom', 'molecule', 'reaction', 'periodic', 'bond', 'acid', 'base', 'compound', 'element'],
+  'computer science': ['computer', 'program', 'code', 'algorithm', 'data structure', 'python', 'java', 'c++', 'binary', 'software', 'cpu', 'operating system'],
+  'biology': ['cell', 'bio', 'dna', 'rna', 'evolution', 'organism', 'gene', 'plant', 'animal', 'ecology', 'mitosis', 'human body'],
+  'english': ['english', 'grammar', 'literature', 'writing', 'essay', 'vocab', 'read', 'speak', 'sentence'],
+  'history': ['history', 'war', 'revolution', 'century', 'ancient', 'empire', 'historical', 'civilization', 'president'],
+  'economics': ['econ', 'macro', 'micro', 'supply', 'demand', 'finance', 'market', 'inflation', 'gdp', 'trade'],
+  'geography': ['geography', 'earth', 'map', 'continent', 'ocean', 'climate', 'rock', 'gis', 'landscape'],
+  'data science': ['data science', 'statistics', 'panda', 'numpy', 'visualization', 'probability', 'r programming', 'data analysis'],
+  'machine learning': ['machine learning', 'neural', 'deep learning', 'regression', 'svm', 'model', 'dataset', 'karpathy', 'tensorflow', 'pytorch', 'ai', 'artificial intelligence'],
+  'web development': ['web', 'html', 'css', 'javascript', 'react', 'node', 'frontend', 'backend', 'api', 'website', 'flexbox', 'grid', 'express'],
+  'mechanical engineering': ['mechanical', 'thermo', 'stress', 'fluid', 'cad', 'truss', 'engine', 'machine design', 'dynamics', 'force', 'solidworks'],
+  'electrical engineering': ['electrical', 'circuit', 'resistor', 'voltage', 'op-amp', 'ee', 'current', 'diode', 'transistor', 'signal', 'multisim', 'arduino']
+};
+
 const getRecommendedVideos = (selectedSubject, selectedDomain, backendVideos) => {
   const localMatches = VIDEO_RESOURCES_POOL.filter(vid => {
     const matchesSubject = !selectedSubject || 
@@ -438,15 +455,32 @@ const getRecommendedVideos = (selectedSubject, selectedDomain, backendVideos) =>
     return matchesSubject && matchesDomain;
   });
 
-  const matchedBackend = (backendVideos || []).map(bv => ({
-    id: bv.id,
-    title: bv.title,
-    channel: bv.channel,
-    views: bv.views,
-    duration: bv.duration,
-    thumbnail: bv.thumbnail,
-    url: bv.url || `https://www.youtube.com/watch?v=${bv.id}`
-  }));
+  const matchedBackend = (backendVideos || [])
+    .map(bv => ({
+      id: bv.id,
+      title: bv.title || '',
+      channel: bv.channel || 'Educational Resource',
+      views: bv.views || '100K+ views',
+      duration: bv.duration || '10:00',
+      thumbnail: bv.thumbnail || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=360&q=80',
+      url: bv.url || (bv.id ? `https://www.youtube.com/watch?v=${bv.id}` : '#')
+    }))
+    .filter(bv => {
+      // 1. Ensure the video title matches the chosen subject keywords!
+      if (selectedSubject && selectedSubject !== 'Custom') {
+        const keywords = SUBJECT_KEYWORDS[selectedSubject.toLowerCase()];
+        if (keywords) {
+          const lowerTitle = bv.title.toLowerCase();
+          const hasKeyword = keywords.some(k => lowerTitle.includes(k));
+          if (!hasKeyword) return false;
+        }
+      }
+      // 2. Filter out broken/placeholder dynamic titles
+      if (!bv.title || bv.title.includes('undefined') || bv.title.toLowerCase().includes('failed to')) {
+        return false;
+      }
+      return true;
+    });
 
   const combined = [...localMatches, ...matchedBackend.filter(bv => !localMatches.some(lm => lm.title.toLowerCase() === bv.title.toLowerCase()))];
   

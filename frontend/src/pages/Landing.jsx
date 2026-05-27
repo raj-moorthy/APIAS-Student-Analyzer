@@ -145,9 +145,9 @@ const Landing = () => {
     // 4. Merge: Always start with the last 3 user-submitted feedbacks
     const merged = [...userFeedbacks];
     
-    // Fill the remaining spots up to a total of 5 displayed cards
+    // Fill the remaining spots up to a total of 3 displayed cards
     for (const item of rotatedDefaults) {
-      if (merged.length >= 5) break;
+      if (merged.length >= 3) break;
       if (!merged.some(m => m.name === item.name)) {
         merged.push(item);
       }
