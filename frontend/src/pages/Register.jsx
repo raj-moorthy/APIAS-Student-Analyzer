@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 
 const Register = () => {
-  const { register, verifyEmail, resendVerification } = useAuth();
+  const { register } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // ── Registration form state ──
   const [formData, setFormData] = useState({
@@ -22,26 +25,45 @@ const Register = () => {
   const [avatar, setAvatar] = useState(null);
   const [avatarFile, setAvatarFile] = useState(null);
 
-  // ── Verification screen state ──
-  const [verifyStep, setVerifyStep] = useState(false);
-  const [verifyEmail_addr, setVerifyEmail_addr] = useState('');
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  const [verifyLoading, setVerifyLoading] = useState(false);
-  const [verifyError, setVerifyError] = useState('');
-  const [verifySuccess, setVerifySuccess] = useState('');
-  const [resendCooldown, setResendCooldown] = useState(0);
+  // ── Pre-registration Inline OTP State ──
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [otpError, setOtpError] = useState('');
+  const [otpSuccess, setOtpSuccess] = useState('');
 
-  // ── Resend cooldown timer ──
+  // Handle incoming redirect state (e.g. from unverified login redirect)
   useEffect(() => {
-    if (resendCooldown <= 0) return;
-    const t = setTimeout(() => setResendCooldown(c => c - 1), 1000);
-    return () => clearTimeout(t);
-  }, [resendCooldown]);
+    if (location.state?.verifyEmail) {
+      setFormData(prev => ({ ...prev, email: location.state.verifyEmail }));
+    }
+  }, [location.state]);
+
+  // Email validation regex
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
+
+  // Checks if all fields are filled & email is verified & passwords match
+  const isFormValid =
+    formData.firstName.trim() !== '' &&
+    formData.lastName.trim() !== '' &&
+    formData.username.trim() !== '' &&
+    formData.email.trim() !== '' &&
+    formData.major.trim() !== '' &&
+    formData.password.trim() !== '' &&
+    formData.confirmPassword.trim() !== '' &&
+    formData.password === formData.confirmPassword &&
+    formData.password.length >= 6 &&
+    isEmailVerified;
 
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) { setError('Profile picture must be under 2 MB'); return; }
+    if (file.size > 2 * 1024 * 1024) {
+      setError('Profile picture must be under 2 MB');
+      return;
+    }
     setAvatarFile(file);
     const reader = new FileReader();
     reader.onload = (ev) => setAvatar(ev.target.result);
@@ -57,25 +79,71 @@ const Register = () => {
     setError('');
   };
 
+  // ── Send 4-Digit Inline OTP ──
+  const handleSendOtp = async (e) => {
+    e.preventDefault();
+    if (!isEmailValid) return;
+    setSendingOtp(true);
+    setOtpError('');
+    setOtpSuccess('');
+    try {
+      const res = await fetch(`${API_BASE}/auth/send-inline-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email }),
+      });
+      if (!res.ok) {
+        const msg = await res.text();
+        throw new Error(msg || 'Failed to send verification code.');
+      }
+      setOtpSent(true);
+      setOtpSuccess('📩 Code sent! Please check your email.');
+    } catch (err) {
+      setOtpError(err.message);
+    } finally {
+      setSendingOtp(false);
+    }
+  };
+
+  // ── Verify 4-Digit Inline OTP ──
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    if (otpCode.length !== 4) {
+      setOtpError('Please enter the 4-digit code.');
+      return;
+    }
+    setVerifyingOtp(true);
+    setOtpError('');
+    setOtpSuccess('');
+    try {
+      const res = await fetch(`${API_BASE}/auth/verify-inline-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email, otp: otpCode }),
+      });
+      if (!res.ok) {
+        const msg = await res.text();
+        throw new Error(msg || 'Invalid or expired verification code.');
+      }
+      setIsEmailVerified(true);
+      setOtpSuccess('✔️ Email verified successfully!');
+      setOtpSent(false);
+    } catch (err) {
+      setOtpError(err.message);
+    } finally {
+      setVerifyingOtp(false);
+    }
+  };
+
+  // ── Submit Complete Form ──
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!isFormValid) return;
     setLoading(true);
     setError('');
 
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      setLoading(false);
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters');
-      setLoading(false);
-      return;
-    }
-
     const submissionData = {
-      username: formData.username || formData.email.split('@')[0],
+      username: formData.username,
       email: formData.email,
       password: formData.password,
       firstName: formData.firstName,
@@ -87,14 +155,8 @@ const Register = () => {
     };
 
     try {
-      const result = await register(submissionData);
-      if (result?.requiresVerification) {
-        setVerifyEmail_addr(result.email);
-        setVerifyStep(true);
-        setResendCooldown(60);
-      } else {
-        navigate('/dashboard');
-      }
+      await register(submissionData);
+      navigate('/dashboard');
     } catch (err) {
       setError(err.message || 'Registration failed. Username or Email may already be in use.');
     } finally {
@@ -102,145 +164,8 @@ const Register = () => {
     }
   };
 
-  // ── OTP digit input handlers ──
-  const handleOtpChange = (index, value) => {
-    if (!/^\d?$/.test(value)) return;
-    const next = [...otp];
-    next[index] = value;
-    setOtp(next);
-    setVerifyError('');
-    if (value && index < 5) {
-      document.getElementById(`otp-${index + 1}`)?.focus();
-    }
-  };
-
-  const handleOtpKeyDown = (index, e) => {
-    if (e.key === 'Backspace' && !otp[index] && index > 0) {
-      document.getElementById(`otp-${index - 1}`)?.focus();
-    }
-  };
-
-  const handleOtpPaste = (e) => {
-    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
-    if (pasted.length === 6) {
-      setOtp(pasted.split(''));
-      e.preventDefault();
-    }
-  };
-
-  const handleVerify = async (e) => {
-    e.preventDefault();
-    const code = otp.join('');
-    if (code.length < 6) { setVerifyError('Please enter the 6-digit code.'); return; }
-    setVerifyLoading(true);
-    setVerifyError('');
-    try {
-      await verifyEmail(verifyEmail_addr, code);
-      setVerifySuccess('✅ Email verified! Taking you to your dashboard…');
-      setTimeout(() => navigate('/dashboard'), 1500);
-    } catch (err) {
-      setVerifyError(err.message || 'Invalid or expired verification code.');
-    } finally {
-      setVerifyLoading(false);
-    }
-  };
-
-  const handleResend = async () => {
-    if (resendCooldown > 0) return;
-    try {
-      await resendVerification(verifyEmail_addr);
-      setVerifySuccess('Verification code resent! Check your inbox.');
-      setResendCooldown(60);
-      setTimeout(() => setVerifySuccess(''), 4000);
-    } catch (err) {
-      setVerifyError('Failed to resend. Please try again.');
-    }
-  };
-
-
-
   return (
     <div className="auth-page">
-
-      {/* ── EMAIL VERIFICATION SCREEN ── */}
-      {verifyStep && (
-        <div className="auth-card glassmorphism" style={{ maxWidth: '460px', textAlign: 'center' }}>
-          <div style={{ marginBottom: '1.5rem' }}>
-            <div style={{
-              width: '72px', height: '72px', borderRadius: '50%',
-              background: 'linear-gradient(135deg, #4361ee, #7c3aed)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '2rem', margin: '0 auto 1.25rem'
-            }}>✉️</div>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.5rem' }}>Verify your email</h2>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
-              We sent a 6-digit code to<br />
-              <strong style={{ color: 'var(--text-main)' }}>{verifyEmail_addr}</strong>
-            </p>
-          </div>
-
-          {verifyError && <div className="alert alert-error" style={{ textAlign: 'left', marginBottom: '1rem' }}>{verifyError}</div>}
-          {verifySuccess && <div className="alert alert-success" style={{ textAlign: 'left', marginBottom: '1rem' }}>{verifySuccess}</div>}
-
-          <form onSubmit={handleVerify}>
-            {/* OTP digit boxes */}
-            <div style={{ display: 'flex', gap: '0.65rem', justifyContent: 'center', margin: '1.5rem 0' }}>
-              {otp.map((digit, i) => (
-                <input
-                  key={i}
-                  id={`otp-${i}`}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={1}
-                  value={digit}
-                  onChange={e => handleOtpChange(i, e.target.value)}
-                  onKeyDown={e => handleOtpKeyDown(i, e)}
-                  onPaste={handleOtpPaste}
-                  style={{
-                    width: '48px', height: '56px', textAlign: 'center',
-                    fontSize: '1.5rem', fontWeight: 800,
-                    borderRadius: '12px', border: `2px solid ${digit ? 'var(--primary-color)' : 'var(--border-color)'}`,
-                    background: 'var(--bg-primary)', color: 'var(--text-main)',
-                    transition: 'border-color 0.15s',
-                    outline: 'none',
-                  }}
-                  autoFocus={i === 0}
-                />
-              ))}
-            </div>
-
-            <button
-              type="submit"
-              className="btn-primary"
-              disabled={verifyLoading}
-              style={{ width: '100%', padding: '0.9rem', fontSize: '1rem', borderRadius: '10px' }}
-            >
-              {verifyLoading ? '⏳ Verifying…' : '✅ Verify & Continue'}
-            </button>
-          </form>
-
-          <div style={{ marginTop: '1.5rem', fontSize: '0.88rem', color: 'var(--text-muted)' }}>
-            Didn't get the code?{' '}
-            {resendCooldown > 0 ? (
-              <span style={{ color: 'var(--text-light)' }}>Resend in {resendCooldown}s</span>
-            ) : (
-              <button
-                onClick={handleResend}
-                style={{ background: 'none', border: 'none', color: 'var(--primary-color)',
-                         cursor: 'pointer', fontWeight: 700, fontSize: '0.88rem', padding: 0 }}
-              >
-                Resend code
-              </button>
-            )}
-          </div>
-          <p style={{ marginTop: '1rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-            Check spam/junk if you don't see it in your inbox.
-          </p>
-        </div>
-      )}
-
-      {/* ── REGISTRATION FORM ── */}
-      {!verifyStep && (
       <div className="auth-card register-card glassmorphism">
         <div className="auth-header">
           {/* Avatar Upload */}
@@ -250,8 +175,8 @@ const Register = () => {
               : <span className="avatar-placeholder">📷</span>}
             <div className="avatar-upload-overlay">Upload Photo</div>
           </div>
-          <input id="avatarInput" type="file" accept="image/*" style={{display:'none'}} onChange={handleAvatarChange} />
-          <div className="auth-logo-badge" style={{marginTop:'0.75rem'}}>APAIS</div>
+          <input id="avatarInput" type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarChange} />
+          <div className="auth-logo-badge" style={{ marginTop: '0.75rem' }}>APAIS</div>
           <h2>Join APAIS</h2>
           <p>Optimize and track your academic path with precision</p>
         </div>
@@ -299,17 +224,115 @@ const Register = () => {
                 required
               />
             </div>
-            <div className="form-group">
-              <label htmlFor="email">Email Address</label>
-              <input
-                id="email"
-                type="email"
-                name="email"
-                placeholder="john.doe@university.edu"
-                value={formData.email}
-                onChange={handleChange}
-                required
-              />
+
+            <div className="form-group" style={{ position: 'relative' }}>
+              <label htmlFor="email">
+                Email Address
+                {isEmailVerified && (
+                  <span style={{ color: '#10b981', marginLeft: '8px', fontWeight: 'bold' }}>
+                    ✔️ Verified
+                  </span>
+                )}
+              </label>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input
+                  id="email"
+                  type="email"
+                  name="email"
+                  placeholder="john.doe@university.edu"
+                  value={formData.email}
+                  onChange={handleChange}
+                  disabled={isEmailVerified}
+                  required
+                  style={{ flex: 1 }}
+                />
+              </div>
+
+              {/* Inline OTP Code Action */}
+              {!isEmailVerified && (
+                <div style={{ marginTop: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={handleSendOtp}
+                    disabled={!isEmailValid || sendingOtp}
+                    style={{
+                      padding: '6px 12px',
+                      fontSize: '0.8rem',
+                      borderRadius: '6px',
+                      border: 'none',
+                      cursor: isEmailValid ? 'pointer' : 'not-allowed',
+                      transition: 'all 0.2s ease',
+                      fontWeight: 'bold',
+                      background: isEmailValid
+                        ? 'linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%)'
+                        : 'rgba(255, 255, 255, 0.08)',
+                      color: isEmailValid ? '#ffffff' : 'rgba(255, 255, 255, 0.35)',
+                      boxShadow: isEmailValid ? '0 2px 8px rgba(67, 97, 238, 0.2)' : 'none',
+                    }}
+                  >
+                    {sendingOtp ? '⏳ Sending…' : otpSent ? '🔄 Resend Code' : '🔑 Send Code'}
+                  </button>
+                </div>
+              )}
+
+              {/* OTP Space */}
+              {otpSent && !isEmailVerified && (
+                <div style={{
+                  marginTop: '12px',
+                  padding: '12px',
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: '10px'
+                }}>
+                  <label htmlFor="otpCode" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '6px' }}>
+                    Enter 4-digit code
+                  </label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      id="otpCode"
+                      type="text"
+                      maxLength={4}
+                      placeholder="XXXX"
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                      style={{
+                        width: '90px',
+                        textAlign: 'center',
+                        fontSize: '1rem',
+                        fontWeight: 'bold',
+                        letterSpacing: '3px',
+                        padding: '6px',
+                        minHeight: '38px',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                        background: 'var(--bg-primary)',
+                        color: 'var(--text-main)',
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleVerifyOtp}
+                      disabled={otpCode.length !== 4 || verifyingOtp}
+                      style={{
+                        padding: '6px 16px',
+                        fontSize: '0.85rem',
+                        borderRadius: '6px',
+                        border: 'none',
+                        fontWeight: 'bold',
+                        cursor: otpCode.length === 4 ? 'pointer' : 'not-allowed',
+                        background: otpCode.length === 4 ? '#10b981' : 'rgba(255, 255, 255, 0.08)',
+                        color: otpCode.length === 4 ? '#ffffff' : 'rgba(255, 255, 255, 0.35)',
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      {verifyingOtp ? 'Verifying…' : '✔️ Verify'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {otpError && <div style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '6px' }}>⚠️ {otpError}</div>}
+              {otpSuccess && <div style={{ color: '#10b981', fontSize: '0.8rem', marginTop: '6px' }}>{otpSuccess}</div>}
             </div>
           </div>
 
@@ -387,7 +410,20 @@ const Register = () => {
             </div>
           </div>
 
-          <button type="submit" className="btn-primary auth-btn" disabled={loading}>
+          <button
+            type="submit"
+            className="btn-primary auth-btn"
+            disabled={!isFormValid || loading}
+            style={{
+              cursor: isFormValid ? 'pointer' : 'not-allowed',
+              opacity: isFormValid ? 1 : 0.5,
+              background: isFormValid
+                ? 'linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%)'
+                : 'rgba(255, 255, 255, 0.08)',
+              color: isFormValid ? '#ffffff' : 'rgba(255, 255, 255, 0.35)',
+              transition: 'all 0.3s ease',
+            }}
+          >
             {loading ? (
               <span className="spinner-loader">Creating Account...</span>
             ) : (
@@ -405,10 +441,8 @@ const Register = () => {
           </p>
         </div>
       </div>
-      )}  {/* end !verifyStep */}
     </div>
   );
-
 };
 
 export default Register;

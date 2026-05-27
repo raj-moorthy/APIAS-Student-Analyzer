@@ -111,44 +111,33 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Auto-send verification OTP after registration
-	otp := fmt.Sprintf("%06d", rand.Intn(1000000))
-	expiry := time.Now().Add(15 * time.Minute)
-	verifColl := models.GetCollection(client, "email_verifications")
-	verifColl.DeleteMany(context.Background(), bson.M{"email": user.Email})
-	verifColl.InsertOne(context.Background(), bson.M{
-		"email":      user.Email,
-		"otp":        otp,
-		"expires_at": expiry,
-		"created_at": time.Now(),
-	})
-
-	htmlBody := fmt.Sprintf(`
-<p>Hi <strong>%s</strong> 👋</p>
-<p>Welcome to <strong>APAIS</strong>! Please verify your email address using the code below.</p>
-<div style="text-align:center;margin:32px 0;">
-  <div style="display:inline-block;background:linear-gradient(135deg,#4361ee,#7c3aed);border-radius:16px;padding:24px 48px;">
-    <span style="font-size:40px;font-weight:900;letter-spacing:12px;color:#fff;">%s</span>
-  </div>
-  <p style="color:#94a3b8;margin-top:12px;font-size:13px;">This code expires in <strong>15 minutes</strong>.</p>
-</div>
-<p style="color:#64748b;font-size:13px;">If you did not create an APAIS account, please ignore this email.</p>`,
-		user.FirstName, otp)
-
-	subject := "✅ APAIS — Verify Your Email Address"
-	if err := sendMail(user.Email, subject, buildHTML(subject, htmlBody)); err != nil {
-		log.Printf("[RegisterUser] verification email error: %v", err)
-		// Don't fail registration if email fails — user can resend
+	// Email was already verified inline during registration form — issue JWT immediately
+	tokenString, err := auth.GenerateToken(&user)
+	if err != nil {
+		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
+		return
 	}
 
-	log.Printf("[RegisterUser] new user: %s (%s), verification OTP sent", user.Username, user.Email)
+	log.Printf("[RegisterUser] new user: %s (%s)", user.Username, user.Email)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"message":           "Registration successful! Please check your email to verify your account.",
-		"email":             user.Email,
-		"requiresVerification": true,
+		"user": map[string]interface{}{
+			"id":             user.ID.Hex(),
+			"username":       user.Username,
+			"email":          user.Email,
+			"firstName":      user.FirstName,
+			"lastName":       user.LastName,
+			"role":           user.Role,
+			"semester":       user.Semester,
+			"major":          user.Major,
+			"createdAt":      user.CreatedAt,
+			"isActive":       user.IsActive,
+			"isEmailVerified": true,
+			"preferences":    user.Preferences,
+		},
+		"token": tokenString,
 	})
 }
 
@@ -674,5 +663,110 @@ func VerifyEmail(w http.ResponseWriter, r *http.Request) {
 			"preferences":     user.Preferences,
 		},
 		"token": tokenString,
+	})
+}
+
+// SendInlineEmailOTP — POST /api/auth/send-inline-otp
+// Called from the registration form. Sends a 4-digit code to the provided email
+// (does NOT require the user to exist). Used for inline pre-registration verification.
+func SendInlineEmailOTP(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Email string `json:"email"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Email == "" {
+		http.Error(w, "Email is required", http.StatusBadRequest)
+		return
+	}
+
+	client, err := models.ConnectDB(getMongoURI())
+	if err != nil {
+		http.Error(w, "Database connection failed", http.StatusInternalServerError)
+		return
+	}
+
+	// Check if email already registered
+	usersColl := models.GetCollection(client, "users")
+	var existing models.User
+	if err := usersColl.FindOne(context.Background(), bson.M{"email": body.Email}).Decode(&existing); err == nil {
+		http.Error(w, "This email is already registered. Please log in.", http.StatusConflict)
+		return
+	}
+
+	// Generate 4-digit OTP
+	otp := fmt.Sprintf("%04d", rand.Intn(10000))
+	expiry := time.Now().Add(10 * time.Minute)
+	otpColl := models.GetCollection(client, "inline_email_otps")
+	otpColl.DeleteMany(context.Background(), bson.M{"email": body.Email})
+	otpColl.InsertOne(context.Background(), bson.M{
+		"email":      body.Email,
+		"otp":        otp,
+		"expires_at": expiry,
+		"created_at": time.Now(),
+	})
+
+	htmlBody := fmt.Sprintf(`
+<p>Hi there 👋</p>
+<p>You're signing up for <strong>APAIS</strong>. Here's your email verification code:</p>
+<div style="text-align:center;margin:32px 0;">
+  <div style="display:inline-block;background:linear-gradient(135deg,#4361ee,#7c3aed);border-radius:16px;padding:28px 52px;">
+    <span style="font-size:48px;font-weight:900;letter-spacing:14px;color:#fff;">%s</span>
+  </div>
+  <p style="color:#94a3b8;margin-top:12px;font-size:13px;">This code expires in <strong>10 minutes</strong>.</p>
+</div>
+<p style="color:#64748b;font-size:13px;">If you didn't request this, you can safely ignore this email.</p>`, otp)
+
+	subject := "🔑 APAIS — Your Email Verification Code"
+	if err := sendMail(body.Email, subject, buildHTML(subject, htmlBody)); err != nil {
+		log.Printf("[SendInlineEmailOTP] email error: %v", err)
+		http.Error(w, "Failed to send verification email. Please try again.", http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("[SendInlineEmailOTP] 4-digit OTP sent to %s", body.Email)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"message": "Verification code sent."})
+}
+
+// VerifyInlineEmailOTP — POST /api/auth/verify-inline-otp
+// Verifies the 4-digit inline OTP entered by the user during registration.
+func VerifyInlineEmailOTP(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Email string `json:"email"`
+		OTP   string `json:"otp"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Email == "" || body.OTP == "" {
+		http.Error(w, "Email and code are required", http.StatusBadRequest)
+		return
+	}
+
+	client, err := models.ConnectDB(getMongoURI())
+	if err != nil {
+		http.Error(w, "Database connection failed", http.StatusInternalServerError)
+		return
+	}
+
+	otpColl := models.GetCollection(client, "inline_email_otps")
+	var doc struct {
+		Email     string    `bson:"email"`
+		OTP       string    `bson:"otp"`
+		ExpiresAt time.Time `bson:"expires_at"`
+	}
+	if err := otpColl.FindOne(context.Background(), bson.M{"email": body.Email, "otp": body.OTP}).Decode(&doc); err != nil {
+		http.Error(w, "Invalid verification code", http.StatusUnauthorized)
+		return
+	}
+	if time.Now().After(doc.ExpiresAt) {
+		otpColl.DeleteOne(context.Background(), bson.M{"email": body.Email})
+		http.Error(w, "Code has expired. Please request a new one.", http.StatusUnauthorized)
+		return
+	}
+
+	// Clean up OTP — it's been used
+	otpColl.DeleteOne(context.Background(), bson.M{"email": body.Email})
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "Email verified.",
+		"status":  "verified",
 	})
 }

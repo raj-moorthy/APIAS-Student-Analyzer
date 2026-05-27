@@ -132,18 +132,24 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify(userData)
       });
 
-      // 201 = success, registration requires email verification
-      if (response.status === 201) {
-        const data = await response.json();
-        return data; // { message, email, requiresVerification: true }
-      }
-
       if (!response.ok) {
         const errMsg = await response.text();
         throw new Error(errMsg || 'Registration failed');
       }
 
       const data = await response.json();
+      // Store token and set user — inline email verification already done
+      if (data.token && data.user) {
+        localStorage.setItem('token', data.token);
+        setUser(data.user);
+        try {
+          const settingsRes = await fetch(`${API_BASE}/settings`, { headers: { 'Authorization': `Bearer ${data.token}` } });
+          if (settingsRes.ok) {
+            const settingsData = await settingsRes.json();
+            if (settingsData.preferences) applySettingsClasses(settingsData.preferences);
+          }
+        } catch (e) {}
+      }
       return data;
     } catch (err) {
       setApiError(err.message);
