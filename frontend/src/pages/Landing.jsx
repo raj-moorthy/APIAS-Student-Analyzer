@@ -81,57 +81,9 @@ const Landing = () => {
 
   useEffect(() => {
     const fetchGlobalFeedbacks = async () => {
-      // 1. Base pool of default scholar testimonials to rotate day by day (5 testimonials)
-      const defaultPool = [
-        {
-          text: "Implementing the APAIS analytics system has completely overhauled how I schedule my exams. The GPA booster modules pinpoint exactly where my study voids are.",
-          name: "Amelia Chen",
-          role: "Computer Science Major, Sem 6",
-          avatar: "AC",
-          rating: 5
-        },
-        {
-          text: "The YouTube dynamic learning interface is outstanding. I typed my physics curriculum and got immediate, highly popular videos that helped me score 95% on my midterms.",
-          name: "David Sterling",
-          role: "Biochemistry Major, Sem 4",
-          avatar: "DS",
-          rating: 5
-        },
-        {
-          text: "As an administrator, having a predictive warning engine helps us target students struggling with specific courses early enough to offer beneficial help.",
-          name: "Dr. Marcus Vance",
-          role: "Dean of Academic Affairs, Stanford L&D",
-          avatar: "MV",
-          rating: 5
-        },
-        {
-          text: "The AI study planner is like having an Ivy League tutor in my pocket. My preparation productivity has literally doubled within two weeks.",
-          name: "Sarah Jenkins",
-          role: "Bioengineering Major, Sem 2",
-          avatar: "SJ",
-          rating: 5
-        },
-        {
-          text: "APAIS makes course analytics fun and accessible! I can upload my scores and see interactive trajectory projections instantly.",
-          name: "Ryan Gallagher",
-          role: "Finance Major, Sem 5",
-          avatar: "RG",
-          rating: 5
-        }
-      ];
-
-      // Rotate the default pool day by day using the current day of the month!
-      const dayOfMonth = new Date().getDate(); // 1 to 31
-      const rotatedDefaults = [...defaultPool];
-      const shiftAmount = dayOfMonth % defaultPool.length;
-      for (let i = 0; i < shiftAmount; i++) {
-        const first = rotatedDefaults.shift();
-        rotatedDefaults.push(first);
-      }
-
       let globalFeedbacks = [];
 
-      // Fetch from the Go backend!
+      // Fetch real feedbacks from the Go backend!
       try {
         const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
         const cleanApiBase = apiBase.endsWith('/') ? apiBase.slice(0, -1) : apiBase;
@@ -146,7 +98,7 @@ const Landing = () => {
         console.warn("Backend feedback fetch failed, falling back to local storage", err);
       }
 
-      // If backend is empty or failed, fallback to local storage
+      // If backend has no data or failed, fallback to local storage
       if (globalFeedbacks.length === 0) {
         const saved = localStorage.getItem('apais_scholar_feedback');
         if (saved) {
@@ -161,18 +113,7 @@ const Landing = () => {
         }
       }
 
-      // Merge: Start with latest global feedbacks
-      const merged = [...globalFeedbacks];
-      
-      // Fill the remaining spots up to a total of 3 displayed cards
-      for (const item of rotatedDefaults) {
-        if (merged.length >= 3) break;
-        if (!merged.some(m => m.name === item.name)) {
-          merged.push(item);
-        }
-      }
-
-      setScholarFeedbacks(merged);
+      setScholarFeedbacks(globalFeedbacks);
     };
 
     fetchGlobalFeedbacks();
@@ -538,28 +479,36 @@ const Landing = () => {
           <p className="lp-sec-sub">Real testimonies from student cohorts and institution operators utilizing our suite.</p>
         </div>
         <div className="lp-testi-grid">
-          {scholarFeedbacks.map((t, i) => (
-            <div className="lp-testi-card lp-glass" key={i}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <span className="lp-testi-quote" style={{ margin: 0, lineHeight: 1 }}>“</span>
-                <div style={{ color: '#eab308', display: 'flex', gap: '0.1rem', fontSize: '0.9rem' }}>
-                  {Array.from({ length: t.rating || 5 }).map((_, sIdx) => (
-                    <span key={sIdx}>★</span>
-                  ))}
+          {scholarFeedbacks.length > 0 ? (
+            scholarFeedbacks.map((t, i) => (
+              <div className="lp-testi-card lp-glass" key={i}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <span className="lp-testi-quote" style={{ margin: 0, lineHeight: 1 }}>“</span>
+                  <div style={{ color: '#eab308', display: 'flex', gap: '0.1rem', fontSize: '0.9rem' }}>
+                    {Array.from({ length: t.rating || 5 }).map((_, sIdx) => (
+                      <span key={sIdx}>★</span>
+                    ))}
+                  </div>
+                </div>
+                <p>{t.text}</p>
+                <div className="lp-testi-user">
+                  <div className="lp-testi-avatar" style={{ background: 'linear-gradient(135deg, var(--color-purple) 0%, var(--color-cyan) 100%)', color: '#fff', fontWeight: '800' }}>
+                    {t.avatar}
+                  </div>
+                  <div>
+                    <div className="lp-testi-name">{t.name}</div>
+                    <div className="lp-testi-role">{t.role}</div>
+                  </div>
                 </div>
               </div>
-              <p>{t.text}</p>
-              <div className="lp-testi-user">
-                <div className="lp-testi-avatar" style={{ background: 'linear-gradient(135deg, var(--color-purple) 0%, var(--color-cyan) 100%)', color: '#fff', fontWeight: '800' }}>
-                  {t.avatar}
-                </div>
-                <div>
-                  <div className="lp-testi-name">{t.name}</div>
-                  <div className="lp-testi-role">{t.role}</div>
-                </div>
-              </div>
+            ))
+          ) : (
+            <div className="lp-testi-card lp-glass" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem 1.5rem', opacity: 0.85 }}>
+              <span style={{ fontSize: '2.5rem' }}>📣</span>
+              <h3 style={{ margin: '1rem 0 0.5rem 0', fontWeight: '700', color: 'var(--text-main)' }}>No scholar feedbacks yet</h3>
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Be the first to review your experience by clicking logout in your dashboard!</p>
             </div>
-          ))}
+          )}
         </div>
       </section>
 

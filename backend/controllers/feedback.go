@@ -22,40 +22,6 @@ func GetFeedbacks(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// Automatically seed the collection if it's empty to guarantee real data is always populated!
-	count, err := collection.CountDocuments(ctx, bson.M{})
-	if err == nil && count == 0 {
-		realFeedbacks := []interface{}{
-			models.Feedback{
-				ID:        primitive.NewObjectID(),
-				Text:      "APAIS has completely transformed how I organize my studies. The AI-suggested resources are incredibly accurate and save me hours of searching on YouTube.",
-				Name:      "Raj Moorthy",
-				Role:      "Computer Science Major, Sem 5",
-				Avatar:    "RM",
-				Rating:    5,
-				CreatedAt: time.Now().Add(-24 * time.Hour),
-			},
-			models.Feedback{
-				ID:        primitive.NewObjectID(),
-				Text:      "The task planner combined with custom Medium blog recommendations is a game-changer. It makes preparing for lab exams so seamless.",
-				Name:      "Kripa Sharma",
-				Role:      "Information Technology, Sem 3",
-				Avatar:    "KS",
-				Rating:    5,
-				CreatedAt: time.Now().Add(-12 * time.Hour),
-			},
-			models.Feedback{
-				ID:        primitive.NewObjectID(),
-				Text:      "I love the clean analytics dashboard and marks tracker! Uploading my test scores and getting a visual progress chart is super motivating.",
-				Name:      "Anjali Nair",
-				Role:      "Data Science Major, Sem 4",
-				Avatar:    "AN",
-				Rating:    5,
-				CreatedAt: time.Now(),
-			},
-		}
-		_, _ = collection.InsertMany(ctx, realFeedbacks)
-	}
 
 	findOpts := options.Find().SetSort(bson.D{{Key: "created_at", Value: -1}}).SetLimit(50)
 	cursor, err := collection.Find(ctx, bson.M{}, findOpts)
