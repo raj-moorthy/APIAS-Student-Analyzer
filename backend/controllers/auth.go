@@ -81,18 +81,19 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user := models.User{
-		ID:        primitive.NewObjectID(),
-		Username:  input.Username,
-		Email:     input.Email,
-		Password:  string(hashedPassword),
-		FirstName: input.FirstName,
-		LastName:  input.LastName,
-		Role:      input.Role,
-		Semester:  input.Semester,
-		Major:     input.Major,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-		IsActive:  true,
+		ID:               primitive.NewObjectID(),
+		Username:         input.Username,
+		Email:            input.Email,
+		Password:         string(hashedPassword),
+		FirstName:        input.FirstName,
+		LastName:         input.LastName,
+		Role:             input.Role,
+		Semester:         input.Semester,
+		Major:            input.Major,
+		CreatedAt:        time.Now(),
+		UpdatedAt:        time.Now(),
+		IsActive:         true,
+		IsEmailVerified:  false,
 		Preferences: models.Preferences{
 			Theme:          "light",
 			Notifications:  true,
@@ -110,30 +111,44 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokenString, err := auth.GenerateToken(&user)
-	if err != nil {
-		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
-		return
+	// Auto-send verification OTP after registration
+	otp := fmt.Sprintf("%06d", rand.Intn(1000000))
+	expiry := time.Now().Add(15 * time.Minute)
+	verifColl := models.GetCollection(client, "email_verifications")
+	verifColl.DeleteMany(context.Background(), bson.M{"email": user.Email})
+	verifColl.InsertOne(context.Background(), bson.M{
+		"email":      user.Email,
+		"otp":        otp,
+		"expires_at": expiry,
+		"created_at": time.Now(),
+	})
+
+	htmlBody := fmt.Sprintf(`
+<p>Hi <strong>%s</strong> 👋</p>
+<p>Welcome to <strong>APAIS</strong>! Please verify your email address using the code below.</p>
+<div style="text-align:center;margin:32px 0;">
+  <div style="display:inline-block;background:linear-gradient(135deg,#4361ee,#7c3aed);border-radius:16px;padding:24px 48px;">
+    <span style="font-size:40px;font-weight:900;letter-spacing:12px;color:#fff;">%s</span>
+  </div>
+  <p style="color:#94a3b8;margin-top:12px;font-size:13px;">This code expires in <strong>15 minutes</strong>.</p>
+</div>
+<p style="color:#64748b;font-size:13px;">If you did not create an APAIS account, please ignore this email.</p>`,
+		user.FirstName, otp)
+
+	subject := "✅ APAIS — Verify Your Email Address"
+	if err := sendMail(user.Email, subject, buildHTML(subject, htmlBody)); err != nil {
+		log.Printf("[RegisterUser] verification email error: %v", err)
+		// Don't fail registration if email fails — user can resend
 	}
 
-	log.Printf("[RegisterUser] new user: %s (%s)", user.Username, user.Email)
+	log.Printf("[RegisterUser] new user: %s (%s), verification OTP sent", user.Username, user.Email)
 
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"user": map[string]interface{}{
-			"id":          user.ID.Hex(),
-			"username":    user.Username,
-			"email":       user.Email,
-			"firstName":   user.FirstName,
-			"lastName":    user.LastName,
-			"role":        user.Role,
-			"semester":    user.Semester,
-			"major":       user.Major,
-			"createdAt":   user.CreatedAt,
-			"isActive":    user.IsActive,
-			"preferences": user.Preferences,
-		},
-		"token": tokenString,
+		"message":           "Registration successful! Please check your email to verify your account.",
+		"email":             user.Email,
+		"requiresVerification": true,
 	})
 }
 
@@ -172,6 +187,18 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password)); err != nil {
 		http.Error(w, "Invalid email or password", http.StatusUnauthorized)
+		return
+	}
+
+	// Block login if email not verified
+	if !user.IsEmailVerified {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"error":              "Email not verified. Please check your inbox for the verification code.",
+			"requiresVerification": true,
+			"email":              user.Email,
+		})
 		return
 	}
 
@@ -497,4 +524,155 @@ func GetNotifications(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(notifications)
+}
+
+// SendVerificationEmail — POST /api/auth/send-verification
+// Generates a new OTP and resends the verification email.
+func SendVerificationEmail(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Email string `json:"email"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Email == "" {
+		http.Error(w, "Email is required", http.StatusBadRequest)
+		return
+	}
+
+	client, err := models.ConnectDB(getMongoURI())
+	if err != nil {
+		http.Error(w, "Database connection failed", http.StatusInternalServerError)
+		return
+	}
+
+	// Verify the user exists
+	usersColl := models.GetCollection(client, "users")
+	var user models.User
+	if err = usersColl.FindOne(context.Background(), bson.M{"email": body.Email}).Decode(&user); err != nil {
+		// Return 200 to avoid email enumeration
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"message": "If that email exists, a verification code has been sent."})
+		return
+	}
+
+	if user.IsEmailVerified {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"message": "Email is already verified."})
+		return
+	}
+
+	// Generate OTP
+	otp := fmt.Sprintf("%06d", rand.Intn(1000000))
+	expiry := time.Now().Add(15 * time.Minute)
+	verifColl := models.GetCollection(client, "email_verifications")
+	verifColl.DeleteMany(context.Background(), bson.M{"email": body.Email})
+	verifColl.InsertOne(context.Background(), bson.M{
+		"email":      body.Email,
+		"otp":        otp,
+		"expires_at": expiry,
+		"created_at": time.Now(),
+	})
+
+	htmlBody := fmt.Sprintf(`
+<p>Hi <strong>%s</strong> 👋</p>
+<p>Here is your new APAIS email verification code:</p>
+<div style="text-align:center;margin:32px 0;">
+  <div style="display:inline-block;background:linear-gradient(135deg,#4361ee,#7c3aed);border-radius:16px;padding:24px 48px;">
+    <span style="font-size:40px;font-weight:900;letter-spacing:12px;color:#fff;">%s</span>
+  </div>
+  <p style="color:#94a3b8;margin-top:12px;font-size:13px;">This code expires in <strong>15 minutes</strong>.</p>
+</div>
+<p style="color:#64748b;font-size:13px;">If you did not create an APAIS account, please ignore this email.</p>`,
+		user.FirstName, otp)
+
+	subject := "✅ APAIS — Verify Your Email Address"
+	if err := sendMail(body.Email, subject, buildHTML(subject, htmlBody)); err != nil {
+		log.Printf("[SendVerificationEmail] email error: %v", err)
+		http.Error(w, "Failed to send verification email", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"message": "Verification code sent successfully."})
+}
+
+// VerifyEmail — POST /api/auth/verify-email
+// Verifies the OTP, marks the user's email as verified, and returns a JWT token.
+func VerifyEmail(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Email string `json:"email"`
+		OTP   string `json:"otp"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Email == "" || body.OTP == "" {
+		http.Error(w, "Email and OTP are required", http.StatusBadRequest)
+		return
+	}
+
+	client, err := models.ConnectDB(getMongoURI())
+	if err != nil {
+		http.Error(w, "Database connection failed", http.StatusInternalServerError)
+		return
+	}
+
+	// Verify OTP
+	verifColl := models.GetCollection(client, "email_verifications")
+	var verifDoc struct {
+		Email     string    `bson:"email"`
+		OTP       string    `bson:"otp"`
+		ExpiresAt time.Time `bson:"expires_at"`
+	}
+	if err = verifColl.FindOne(context.Background(), bson.M{"email": body.Email, "otp": body.OTP}).Decode(&verifDoc); err != nil {
+		http.Error(w, "Invalid or expired verification code", http.StatusUnauthorized)
+		return
+	}
+	if time.Now().After(verifDoc.ExpiresAt) {
+		verifColl.DeleteOne(context.Background(), bson.M{"email": body.Email})
+		http.Error(w, "Verification code has expired. Please request a new one.", http.StatusUnauthorized)
+		return
+	}
+
+	// Mark email as verified
+	usersColl := models.GetCollection(client, "users")
+	var user models.User
+	if err = usersColl.FindOne(context.Background(), bson.M{"email": body.Email}).Decode(&user); err != nil {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	now := time.Now()
+	usersColl.UpdateOne(context.Background(),
+		bson.M{"email": body.Email},
+		bson.M{"$set": bson.M{"is_email_verified": true, "updated_at": now}},
+	)
+	user.IsEmailVerified = true
+
+	// Clean up OTP
+	verifColl.DeleteOne(context.Background(), bson.M{"email": body.Email})
+
+	// Generate JWT token — user is now fully authenticated
+	tokenString, err := auth.GenerateToken(&user)
+	if err != nil {
+		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("[VerifyEmail] email verified for %s", user.Email)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"message": "Email verified successfully! Welcome to APAIS.",
+		"user": map[string]interface{}{
+			"id":              user.ID.Hex(),
+			"username":        user.Username,
+			"email":           user.Email,
+			"firstName":       user.FirstName,
+			"lastName":        user.LastName,
+			"role":            user.Role,
+			"semester":        user.Semester,
+			"major":           user.Major,
+			"createdAt":       user.CreatedAt,
+			"isActive":        user.IsActive,
+			"isEmailVerified": true,
+			"preferences":     user.Preferences,
+		},
+		"token": tokenString,
+	})
 }

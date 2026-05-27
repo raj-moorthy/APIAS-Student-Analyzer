@@ -1,0 +1,691 @@
+/* ==========================================================================
+   APAIS – PREMIUM MOBILE CSS
+   Dedicated mobile-first enhancements for the entire app.
+   Loaded globally via main.jsx import.
+   ========================================================================== */
+
+/* ──────────────────────────────────────────────
+   GLOBAL MOBILE RESETS & TOUCH OPTIMIZATIONS
+   ────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  * {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+  }
+
+  body {
+    overflow-x: hidden;
+  }
+
+  .app {
+    flex-direction: column;
+    overflow-x: hidden;
+    min-height: 100dvh; /* use dynamic viewport height */
+  }
+
+  /* Bottom nav buffer so content isn't hidden behind it */
+  .main-content {
+    padding-bottom: 70px;
+  }
+
+  /* ──────────────────────────────────────────────
+     PAGE CONTENT SPACING
+     ────────────────────────────────────────────── */
+  .page-content {
+    padding: 1rem 0.85rem 1.5rem !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+
+  /* ──────────────────────────────────────────────
+     SIDEBAR – FULLSCREEN PREMIUM DRAWER ON MOBILE
+     ────────────────────────────────────────────── */
+  .sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: 280px !important;
+    max-width: 85vw !important;
+    z-index: 1100 !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    box-shadow: none !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    border-right: none !important;
+  }
+
+  body.sidebar-mobile-open .sidebar {
+    transform: translateX(0) !important;
+    box-shadow: 8px 0 40px rgba(0, 0, 0, 0.55) !important;
+  }
+
+  /* Blurred overlay behind drawer */
+  body.sidebar-mobile-open::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    z-index: 1099;
+    animation: mobileOverlayIn 0.25s ease-out;
+  }
+
+  @keyframes mobileOverlayIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  .sidebar-toggle-btn {
+    display: none !important;
+  }
+
+  .sidebar-nav {
+    padding: 1rem 0.75rem !important;
+    flex: 1 !important;
+  }
+
+  .sidebar-nav ul {
+    gap: 0.25rem !important;
+  }
+
+  /* Bigger touch targets for nav links inside drawer */
+  .sidebar-link, .sidebar-nav a {
+    padding: 0.95rem 1.2rem !important;
+    font-size: 1rem !important;
+    border-radius: 12px !important;
+    min-height: 52px !important;
+    gap: 0.9rem !important;
+  }
+
+  .nav-icon {
+    font-size: 1.35rem !important;
+  }
+
+  /* Sidebar header in drawer */
+  .sidebar-header {
+    padding: 1.75rem 1.5rem 1.25rem !important;
+  }
+
+  /* Sidebar footer in drawer */
+  .sidebar-footer {
+    padding: 1rem 1.25rem !important;
+  }
+
+  /* Sidebar user row */
+  .sidebar-user-row {
+    padding: 0.75rem !important;
+    border-radius: 12px !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  /* Logout button */
+  .sidebar-logout-btn {
+    width: 100% !important;
+    padding: 0.85rem 1.2rem !important;
+    font-size: 0.9rem !important;
+    min-height: 44px !important;
+    border-radius: 10px !important;
+  }
+
+  /* ──────────────────────────────────────────────
+     BOTTOM NAVIGATION BAR
+     Native-app style tab bar at bottom of screen
+     ────────────────────────────────────────────── */
+  .mobile-bottom-nav {
+    display: flex !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 1000 !important;
+    background: var(--bg-sidebar) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.07) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    height: 66px !important;
+    padding: 0 0.25rem !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+    align-items: center !important;
+    justify-content: space-around !important;
+  }
+
+  .mobile-nav-item {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 3px !important;
+    padding: 0.35rem 0.25rem !important;
+    text-decoration: none !important;
+    color: rgba(255, 255, 255, 0.45) !important;
+    cursor: pointer !important;
+    border: none !important;
+    background: transparent !important;
+    min-height: 56px !important;
+    border-radius: 12px !important;
+    transition: color 0.18s, transform 0.18s !important;
+  }
+
+  .mobile-nav-item:active {
+    transform: scale(0.93) !important;
+  }
+
+  .mobile-nav-item.active {
+    color: var(--primary-color) !important;
+  }
+
+  .mobile-nav-icon {
+    font-size: 1.45rem !important;
+    line-height: 1 !important;
+    display: block !important;
+  }
+
+  .mobile-nav-item.active .mobile-nav-icon {
+    filter: drop-shadow(0 0 6px var(--primary-color)) !important;
+    transform: translateY(-2px) !important;
+  }
+
+  .mobile-nav-label {
+    font-size: 0.6rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.02em !important;
+    text-transform: uppercase !important;
+    display: block !important;
+  }
+
+  /* Active indicator dot above icon */
+  .mobile-nav-item.active::after {
+    content: '';
+    display: block;
+    position: absolute;
+    top: 6px;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--primary-color);
+  }
+
+  /* ──────────────────────────────────────────────
+     HEADER MOBILE REFINEMENTS
+     ────────────────────────────────────────────── */
+  .header, .premium-header {
+    padding: 0 0.85rem !important;
+    height: 58px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  }
+
+  .header-content {
+    height: 58px !important;
+    gap: 0.5rem !important;
+  }
+
+  .header-page-info {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+  }
+
+  .mobile-sidebar-toggle {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 10px !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    font-size: 1.2rem !important;
+    color: var(--text-main) !important;
+    cursor: pointer !important;
+    flex-shrink: 0 !important;
+    transition: background 0.18s !important;
+  }
+
+  .mobile-sidebar-toggle:active {
+    background: rgba(255, 255, 255, 0.12) !important;
+  }
+
+  .header-icon-badge {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 8px !important;
+    flex-shrink: 0 !important;
+    font-size: 0.95rem !important;
+  }
+
+  .header-title-wrap {
+    flex: 1 !important;
+    min-width: 0 !important;
+  }
+
+  .header-page-title {
+    font-size: 1rem !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    letter-spacing: -0.2px !important;
+  }
+
+  .header-breadcrumb {
+    display: none !important;
+  }
+
+  /* Right side – keep only bell + avatar */
+  .header-user-meta {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    flex-shrink: 0 !important;
+  }
+
+  .header-time-chip {
+    display: none !important;
+  }
+
+  .header-badge.premium-badge {
+    display: none !important;
+  }
+
+  .header-user-name {
+    display: none !important;
+  }
+
+  .header-notif-btn {
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 10px !important;
+    font-size: 1.15rem !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .header-avatar.premium-avatar {
+    width: 34px !important;
+    height: 34px !important;
+    font-size: 0.85rem !important;
+    border-radius: 10px !important;
+  }
+
+  /* Notifications dropdown – full width on mobile */
+  .notif-dropdown {
+    position: fixed !important;
+    top: 66px !important;
+    left: 0.75rem !important;
+    right: 0.75rem !important;
+    width: auto !important;
+    border-radius: 16px !important;
+    max-height: 70vh !important;
+    overflow-y: auto !important;
+  }
+
+  /* ──────────────────────────────────────────────
+     TYPOGRAPHY REFINEMENTS
+     ────────────────────────────────────────────── */
+  h1:not(.header-page-title):not(.lp-hero-title) {
+    font-size: 1.45rem !important;
+    letter-spacing: -0.3px !important;
+  }
+
+  h2 {
+    font-size: 1.2rem !important;
+  }
+
+  h3 {
+    font-size: 1rem !important;
+  }
+
+  p {
+    font-size: 0.88rem !important;
+    line-height: 1.6 !important;
+  }
+
+  /* ──────────────────────────────────────────────
+     CARDS – COMPACT, FINGER-FRIENDLY
+     ────────────────────────────────────────────── */
+  .glassmorphism,
+  .card,
+  .premium-card,
+  .settings-block,
+  .goal-card,
+  .res-hero,
+  .planner-card,
+  .careers-glass,
+  .kpi-card,
+  .performance-card,
+  .insight-card {
+    padding: 1.1rem 1rem !important;
+    margin-bottom: 0.75rem !important;
+    border-radius: 14px !important;
+  }
+
+  /* ──────────────────────────────────────────────
+     FORM CONTROLS – FULL WIDTH & EASY TO TAP
+     ────────────────────────────────────────────── */
+  input, select, textarea {
+    font-size: 0.95rem !important;
+    padding: 0.8rem 0.9rem !important;
+    border-radius: 10px !important;
+    min-height: 46px !important;
+    width: 100% !important;
+  }
+
+  input::placeholder {
+    font-size: 0.88rem !important;
+  }
+
+  .form-group-row {
+    grid-template-columns: 1fr !important;
+    gap: 0.85rem !important;
+  }
+
+  /* ──────────────────────────────────────────────
+     BUTTONS – TOUCH FRIENDLY
+     ────────────────────────────────────────────── */
+  .btn-primary, .btn-secondary, .btn-danger {
+    min-height: 46px !important;
+    padding: 0.8rem 1.25rem !important;
+    font-size: 0.9rem !important;
+    border-radius: 10px !important;
+  }
+
+  /* ──────────────────────────────────────────────
+     GRIDS – SINGLE COLUMN
+     ────────────────────────────────────────────── */
+  .grid-4,
+  .grid-3,
+  .grid-2,
+  .grid-1-2,
+  .grid-2-1,
+  .features-grid,
+  .kpi-grid,
+  .dashboard-grid,
+  .dashboard-charts,
+  .hero-stats,
+  .stats-container {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+  }
+
+  /* 2-col grids for KPIs since they're compact */
+  .kpi-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.65rem !important;
+  }
+
+  /* ──────────────────────────────────────────────
+     TABLES & COMPLEX WIDGETS – SCROLLABLE CONTAINERS
+     ────────────────────────────────────────────── */
+  .table-container,
+  .calendar-container,
+  .heatmap-container,
+  .chart-wrap,
+  .planner-table-wrap,
+  .schedule-wrap {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    display: block !important;
+    width: 100% !important;
+    border-radius: 12px !important;
+  }
+
+  .data-table {
+    min-width: 520px !important;
+  }
+
+  .week-calendar {
+    min-width: 560px !important;
+  }
+
+  .heatmap-grid {
+    min-width: 460px !important;
+  }
+
+  /* ──────────────────────────────────────────────
+     AUTH PAGES – LOGIN & REGISTER
+     ────────────────────────────────────────────── */
+  .auth-page {
+    padding: 1rem !important;
+    align-items: flex-start !important;
+    padding-top: 2rem !important;
+  }
+
+  .auth-card {
+    padding: 2rem 1.25rem !important;
+    margin: 0 !important;
+    width: 100% !important;
+    border-radius: 18px !important;
+  }
+
+  .register-card {
+    max-width: 100% !important;
+  }
+
+  /* ──────────────────────────────────────────────
+     DASHBOARD
+     ────────────────────────────────────────────── */
+  .dashboard-hero {
+    padding: 1.25rem !important;
+  }
+
+  .hero-stats {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 0.75rem !important;
+  }
+
+  .hero-stat-item {
+    flex: 1 !important;
+    min-width: calc(50% - 0.375rem) !important;
+  }
+
+  /* ──────────────────────────────────────────────
+     PLANNER
+     ────────────────────────────────────────────── */
+  .planner-header {
+    flex-direction: column !important;
+    gap: 0.85rem !important;
+  }
+
+  .planner-actions {
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 0.6rem !important;
+  }
+
+  .planner-actions button,
+  .planner-actions select {
+    width: 100% !important;
+  }
+
+  /* ──────────────────────────────────────────────
+     ANALYTICS
+     ────────────────────────────────────────────── */
+  .analytics-header-row {
+    flex-direction: column !important;
+    gap: 0.85rem !important;
+  }
+
+  /* ──────────────────────────────────────────────
+     RESOURCES
+     ────────────────────────────────────────────── */
+  .res-search-row {
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+  }
+
+  .res-field {
+    width: 100% !important;
+  }
+
+  .res-search-btn {
+    width: 100% !important;
+    padding: 0.8rem !important;
+  }
+
+  .res-tab-row {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.5rem !important;
+  }
+
+  .res-tab-btn {
+    text-align: center !important;
+    padding: 0.7rem 0.5rem !important;
+    font-size: 0.78rem !important;
+    border-radius: 10px !important;
+    min-height: 44px !important;
+  }
+
+  /* Video and blog cards */
+  .vid-card, .blog-card {
+    flex-direction: column !important;
+  }
+
+  .vid-thumb {
+    width: 100% !important;
+    height: 160px !important;
+    border-radius: 10px 10px 0 0 !important;
+  }
+
+  /* ──────────────────────────────────────────────
+     GOALS
+     ────────────────────────────────────────────── */
+  .goal-card-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.65rem !important;
+  }
+
+  .goal-card-actions {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+    width: 100% !important;
+  }
+
+  .goal-card-actions button {
+    flex: 1 !important;
+    min-width: 100px !important;
+  }
+
+  /* Quiz modal */
+  .premium-quiz-modal-content {
+    margin: 1rem !important;
+    width: calc(100% - 2rem) !important;
+    max-width: 100% !important;
+    max-height: 90dvh !important;
+    overflow-y: auto !important;
+    border-radius: 18px !important;
+  }
+
+  /* ──────────────────────────────────────────────
+     PROFILE
+     ────────────────────────────────────────────── */
+  .profile-header-card {
+    flex-direction: column !important;
+    text-align: center !important;
+    align-items: center !important;
+    gap: 1rem !important;
+  }
+
+  .profile-avatar-wrap {
+    margin-right: 0 !important;
+  }
+
+  .profile-actions {
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 0.6rem !important;
+  }
+
+  .profile-actions button {
+    width: 100% !important;
+  }
+
+  /* ──────────────────────────────────────────────
+     SETTINGS
+     ────────────────────────────────────────────── */
+  .settings-block {
+    padding: 1.1rem !important;
+  }
+
+  .settings-block h2 {
+    font-size: 1rem !important;
+    margin-bottom: 0.4rem !important;
+  }
+
+  .settings-save-btn {
+    width: 100% !important;
+    padding: 0.9rem !important;
+    font-size: 0.95rem !important;
+  }
+
+  /* ──────────────────────────────────────────────
+     MODALS & OVERLAYS
+     ────────────────────────────────────────────── */
+  .modal-content,
+  .feedback-modal {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+    width: 100% !important;
+    border-radius: 20px 20px 0 0 !important;
+    padding: 1.75rem 1.25rem 2rem !important;
+    margin: 0 !important;
+    animation: slideUpSheet 0.32s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  @keyframes slideUpSheet {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+
+  /* ──────────────────────────────────────────────
+     QUICK TAGS ROW – HORIZONTAL SCROLLABLE
+     ────────────────────────────────────────────── */
+  .res-quick-tags {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: 4px !important;
+  }
+
+  .tag-btn {
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* ──────────────────────────────────────────────
+     SCROLLBAR HIDE ON MOBILE (AESTHETIC)
+     ────────────────────────────────────────────── */
+  .res-quick-tags::-webkit-scrollbar,
+  .table-container::-webkit-scrollbar,
+  .heatmap-container::-webkit-scrollbar,
+  .notif-list::-webkit-scrollbar {
+    display: none !important;
+  }
+}
+
+/* ──────────────────────────────────────────────
+   ONLY SHOW BOTTOM NAV BAR ON MOBILE
+   ────────────────────────────────────────────── */
+.mobile-bottom-nav {
+  display: none;
+}

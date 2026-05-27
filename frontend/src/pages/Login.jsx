@@ -209,11 +209,19 @@ const Login = () => {
       const defaultView = localStorage.getItem('defaultView') || 'dashboard';
       navigate(`/${defaultView}`);
     } catch (err) {
-      setError(err.message || 'Invalid email or password');
+      // Check if the error is about unverified email (403 response)
+      const msg = err.message || '';
+      if (msg.includes('not verified') || msg.includes('requiresVerification')) {
+        // Redirect back to register page which will show the verify screen
+        navigate('/register', { state: { verifyEmail: formData.email } });
+        return;
+      }
+      setError(msg || 'Invalid email or password');
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="auth-page">

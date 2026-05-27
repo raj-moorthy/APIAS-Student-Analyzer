@@ -90,8 +90,16 @@ export const AuthProvider = ({ children }) => {
       });
 
       if (!response.ok) {
-        const errMsg = await response.text();
-        throw new Error(errMsg || 'Invalid email or password');
+        // Try to parse JSON body first (for structured errors like requiresVerification)
+        let errMsg = 'Invalid email or password';
+        try {
+          const errData = await response.json();
+          if (errData.error) errMsg = errData.error;
+          if (errData.requiresVerification) errMsg += ' requiresVerification';
+        } catch {
+          errMsg = await response.text() || errMsg;
+        }
+        throw new Error(errMsg);
       }
 
       const data = await response.json();
@@ -120,11 +128,15 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await fetch(`${API_BASE}/auth/register`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData)
       });
+
+      // 201 = success, registration requires email verification
+      if (response.status === 201) {
+        const data = await response.json();
+        return data; // { message, email, requiresVerification: true }
+      }
 
       if (!response.ok) {
         const errMsg = await response.text();
@@ -132,6 +144,29 @@ export const AuthProvider = ({ children }) => {
       }
 
       const data = await response.json();
+      return data;
+    } catch (err) {
+      setApiError(err.message);
+      throw err;
+    }
+  };
+
+  const verifyEmail = async (email, otp) => {
+    setApiError('');
+    try {
+      const response = await fetch(`${API_BASE}/auth/verify-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp })
+      });
+
+      if (!response.ok) {
+        const errMsg = await response.text();
+        throw new Error(errMsg || 'Verification failed');
+      }
+
+      const data = await response.json();
+      // data.token + data.user available once verified
       localStorage.setItem('token', data.token);
       setUser(data.user);
 
@@ -139,9 +174,7 @@ export const AuthProvider = ({ children }) => {
         const settingsRes = await fetch(`${API_BASE}/settings`, { headers: { 'Authorization': `Bearer ${data.token}` } });
         if (settingsRes.ok) {
           const settingsData = await settingsRes.json();
-          if (settingsData.preferences) {
-            applySettingsClasses(settingsData.preferences);
-          }
+          if (settingsData.preferences) applySettingsClasses(settingsData.preferences);
         }
       } catch (e) {}
 
@@ -150,6 +183,16 @@ export const AuthProvider = ({ children }) => {
       setApiError(err.message);
       throw err;
     }
+  };
+
+  const resendVerification = async (email) => {
+    const response = await fetch(`${API_BASE}/auth/send-verification`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    if (!response.ok) throw new Error('Failed to resend verification email');
+    return response.json();
   };
 
   const logoutUser = () => {
@@ -169,6 +212,8 @@ export const AuthProvider = ({ children }) => {
     user,
     login: loginUser,
     register: registerUser,
+    verifyEmail,
+    resendVerification,
     logout: logoutUser,
     updateUser: updateUserProfileState,
     loading,

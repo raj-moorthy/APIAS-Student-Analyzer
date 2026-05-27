@@ -18,6 +18,8 @@ func SetupRouter(cfg *config.Config) *mux.Router {
 	authRouter.HandleFunc("/logout", controllers.LogoutUser).Methods("POST")
 	authRouter.HandleFunc("/forgot-password", controllers.ForgotPassword).Methods("POST")
 	authRouter.HandleFunc("/reset-password", controllers.ResetPassword).Methods("POST")
+	authRouter.HandleFunc("/send-verification", controllers.SendVerificationEmail).Methods("POST")
+	authRouter.HandleFunc("/verify-email", controllers.VerifyEmail).Methods("POST")
 
 	// Feedback routes (publicly shared)
 	router.HandleFunc("/api/feedback", controllers.GetFeedbacks).Methods("GET")

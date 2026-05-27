@@ -1,10 +1,12 @@
 import React, { useEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import './App.css';
+import './mobile.css';
 
 // Components
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
+import MobileBottomNav from './components/MobileBottomNav';
 import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 import Planner from './pages/Planner';
@@ -171,6 +173,7 @@ function AppContent() {
           </AnimatedPage>
         </main>
       </div>
+      {!isLandingPage && <MobileBottomNav />}
     </div>
   );
 }

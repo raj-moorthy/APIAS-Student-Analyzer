@@ -20,7 +20,8 @@ type User struct {
 	CreatedAt   time.Time          `bson:"created_at" json:"createdAt"`
 	UpdatedAt   time.Time          `bson:"updated_at" json:"updatedAt"`
 	LastLogin   *time.Time         `bson:"last_login,omitempty" json:"lastLogin,omitempty"`
-	IsActive    bool               `bson:"is_active" json:"isActive"`
+	IsActive           bool               `bson:"is_active" json:"isActive"`
+	IsEmailVerified    bool               `bson:"is_email_verified" json:"isEmailVerified"`
 	Preferences Preferences        `bson:"preferences,omitempty" json:"preferences,omitempty"`
 }
 
