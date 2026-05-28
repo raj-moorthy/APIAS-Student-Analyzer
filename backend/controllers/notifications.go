@@ -84,6 +84,11 @@ func sendMail(to, subject, htmlBody string) error {
 		return sendMailResend(to, subject, htmlBody, pass, user)
 	}
 
+	// Support 100% Free modern HTTP-based Brevo service to bypass SMTP blocks & verify any recipient without a custom domain!
+	if host == "brevo" || host == "api.brevo.com" {
+		return sendMailBrevo(to, subject, htmlBody, pass, user)
+	}
+
 	if user == "" {
 		return fmt.Errorf("SMTP user not configured")
 	}
@@ -187,6 +192,60 @@ func sendMailResend(to, subject, htmlBody, apiKey, fromUser string) error {
 	}
 
 	log.Printf("[Resend] Email sent successfully to %s", to)
+	return nil
+}
+
+// sendMailBrevo handles sending emails via Brevo's HTTP API (port 443, never blocked)
+func sendMailBrevo(to, subject, htmlBody, apiKey, fromUser string) error {
+	if apiKey == "" {
+		return fmt.Errorf("brevo API key is missing")
+	}
+	from := fromUser
+	if from == "" {
+		from = "rajmoorthyb@gmail.com" // Default fallback
+	}
+
+	payload := map[string]interface{}{
+		"sender": map[string]string{
+			"name":  "APAIS Notifications",
+			"email": from,
+		},
+		"to": []map[string]string{
+			{
+				"email": to,
+			},
+		},
+		"subject":     subject,
+		"htmlContent": htmlBody,
+	}
+
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("POST", "https://api.brevo.com/v3/smtp/email", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("api-key", apiKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusAccepted {
+		var errResponse map[string]interface{}
+		json.NewDecoder(resp.Body).Decode(&errResponse)
+		return fmt.Errorf("brevo API returned status %d: %v", resp.StatusCode, errResponse)
+	}
+
+	log.Printf("[Brevo] Email sent successfully to %s", to)
 	return nil
 }
 
