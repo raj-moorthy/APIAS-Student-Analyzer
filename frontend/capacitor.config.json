@@ -1,0 +1,8 @@
+{
+  "appId": "com.apais.studentanalyzer",
+  "appName": "APAIS",
+  "webDir": "dist",
+  "server": {
+    "cleartext": true
+  }
+}

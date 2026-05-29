@@ -93,7 +93,7 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 		CreatedAt:        time.Now(),
 		UpdatedAt:        time.Now(),
 		IsActive:         true,
-		IsEmailVerified:  false,
+		IsEmailVerified:  true,
 		Preferences: models.Preferences{
 			Theme:          "light",
 			Notifications:  true,
@@ -179,16 +179,10 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Block login if email not verified
+	// Auto-fix stuck accounts (from before the IsEmailVerified bug was fixed)
 	if !user.IsEmailVerified {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusForbidden)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"error":              "Email not verified. Please check your inbox for the verification code.",
-			"requiresVerification": true,
-			"email":              user.Email,
-		})
-		return
+		user.IsEmailVerified = true
+		usersColl.UpdateOne(context.Background(), bson.M{"email": user.Email}, bson.M{"$set": bson.M{"is_email_verified": true}})
 	}
 
 	now := time.Now()
