@@ -558,31 +558,39 @@ func GetRiskAnalytics(w http.ResponseWriter, r *http.Request) {
 
 // isCleanSubject returns false if the subject name contains invalid characters or looks like corrupted binary data.
 func isCleanSubject(subject string) bool {
-	// If it contains the Unicode replacement character
+	subject = strings.TrimSpace(subject)
+	if len(subject) < 2 || len(subject) > 100 {
+		return false
+	}
+	// If it contains the Unicode replacement character, it's corrupted binary
 	if strings.Contains(subject, "\uFFFD") {
 		return false
 	}
-	// If it has weird control chars or is mostly binary garbage
-	nonPrintable := 0
+
+	junkCount := 0
 	for _, r := range subject {
-		if r < 32 || r > 126 {
-			// Allow standard international characters if they are letters/spaces,
-			// but if it's junk characters like control sequences, mark it as junk
-			if r < 32 {
-				return false
+		// Control characters (except tab/newline/carriage-return) are junk
+		if r < 32 && r != '\t' && r != '\n' && r != '\r' {
+			return false
+		}
+		// Characters in the standard Latin or academic range are clean.
+		// If it's a very strange character, count it as a junk candidate.
+		if r > 126 {
+			// Allow standard accented letters (Latin-1 Supplement e.g. 192 to 255)
+			if r >= 192 && r <= 255 {
+				continue
 			}
-			nonPrintable++
+			junkCount++
 		}
 	}
-	if len(subject) > 0 && float64(nonPrintable)/float64(len(subject)) > 0.15 {
+
+	// If more than 30% of the characters are strange junk candidates, it's garbage binary
+	if float64(junkCount)/float64(len(subject)) > 0.3 {
 		return false
 	}
-	// If the name is extremely long or short
-	if len(subject) > 80 || len(subject) < 2 {
-		return false
-	}
-	// Check for common binary parser remnants
-	if strings.Contains(subject, "") || strings.Contains(subject, "%%") {
+
+	// Check for common binary parser remnants like double percent
+	if strings.Contains(subject, "%%") {
 		return false
 	}
 	return true
