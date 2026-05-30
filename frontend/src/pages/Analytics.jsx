@@ -61,6 +61,277 @@ const SUBJECT_OPTIONS = [
   'Biology', 'English', 'History', 'Economics', 'Geography',
 ];
 
+/* ─── Dynamic Asset Loaders for XLSX & PDFJS ─── */
+const loadSheetJS = () => {
+  return new Promise((resolve, reject) => {
+    if (window.XLSX) return resolve(window.XLSX);
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+    script.onload = () => resolve(window.XLSX);
+    script.onerror = () => reject(new Error('Failed to load Excel parsing engine from CDN.'));
+    document.head.appendChild(script);
+  });
+};
+
+const loadPDFJS = () => {
+  return new Promise((resolve, reject) => {
+    if (window.pdfjsLib) return resolve(window.pdfjsLib);
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    script.onload = () => {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      resolve(window.pdfjsLib);
+    };
+    script.onerror = () => reject(new Error('Failed to load PDF parsing engine from CDN.'));
+    document.head.appendChild(script);
+  });
+};
+
+/* ─── Client-Side Parsers ─── */
+const parseLocalCSV = (text) => {
+  const parsed = [];
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const parts = line.split(/[,\t;]/).map(p => p.trim().replace(/^["']|["']$/g, ''));
+    if (parts.length < 3) continue;
+    
+    const [subject, examName, score, maxScore = '100'] = parts;
+    
+    if (
+      subject.toLowerCase().includes('subject') || 
+      examName.toLowerCase().includes('exam') || 
+      score.toLowerCase().includes('score')
+    ) {
+      continue;
+    }
+    
+    const numScore = parseFloat(score);
+    const numMaxScore = parseFloat(maxScore);
+    
+    if (isNaN(numScore) || isNaN(numMaxScore)) continue;
+    
+    parsed.push({
+      subject: subject || 'General',
+      examName: examName || 'Exam',
+      score: numScore,
+      maxScore: numMaxScore > 0 ? numMaxScore : 100
+    });
+  }
+  return parsed;
+};
+
+const parseLocalExcel = async (file) => {
+  const XLSX = await loadSheetJS();
+  const data = new Uint8Array(await file.arrayBuffer());
+  const workbook = XLSX.read(data, { type: 'array' });
+  const sheetName = workbook.SheetNames[0];
+  const sheet = workbook.Sheets[sheetName];
+  const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+  
+  const parsed = [];
+  let subjectCol = 0, examCol = 1, scoreCol = 2, maxScoreCol = 3;
+  
+  if (rows.length > 0) {
+    const firstRow = rows[0].map(c => String(c || '').toLowerCase());
+    const subIdx = firstRow.findIndex(c => c.includes('sub'));
+    const exIdx = firstRow.findIndex(c => c.includes('exam') || c.includes('test') || c.includes('name'));
+    const scIdx = firstRow.findIndex(c => c.includes('score') || c.includes('mark') || c.includes('your'));
+    const mxIdx = firstRow.findIndex(c => c.includes('max') || c.includes('total'));
+    
+    if (subIdx !== -1) subjectCol = subIdx;
+    if (exIdx !== -1) examCol = exIdx;
+    if (scIdx !== -1) scoreCol = scIdx;
+    if (mxIdx !== -1) maxScoreCol = mxIdx;
+  }
+  
+  const startIdx = rows.length > 1 && (subjectCol !== 0 || examCol !== 1 || scoreCol !== 2) ? 1 : 0;
+  
+  for (let i = startIdx; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row || row.length < 3) continue;
+    
+    const subject = String(row[subjectCol] || '').trim();
+    const examName = String(row[examCol] || '').trim();
+    const scoreVal = parseFloat(row[scoreCol]);
+    let maxScoreVal = parseFloat(row[maxScoreCol]);
+    
+    if (isNaN(maxScoreVal) || maxScoreVal <= 0) maxScoreVal = 100;
+    
+    if (!subject || !examName || isNaN(scoreVal)) continue;
+    
+    parsed.push({
+      subject,
+      examName,
+      score: scoreVal,
+      maxScore: maxScoreVal
+    });
+  }
+  return parsed;
+};
+
+const parseLocalPDF = async (file) => {
+  const pdfjsLib = await loadPDFJS();
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  
+  let textLines = [];
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const textContent = await page.getTextContent();
+    
+    const items = textContent.items;
+    let linesMap = {};
+    items.forEach(item => {
+      const y = Math.round(item.transform[5]);
+      if (!linesMap[y]) linesMap[y] = [];
+      linesMap[y].push(item);
+    });
+    
+    const sortedY = Object.keys(linesMap).map(Number).sort((a, b) => b - a);
+    sortedY.forEach(y => {
+      const lineItems = linesMap[y].sort((a, b) => a.transform[4] - b.transform[4]);
+      const lineText = lineItems.map(item => item.str).join(' ').trim();
+      if (lineText) textLines.push(lineText);
+    });
+  }
+  
+  const parsed = [];
+  textLines.forEach(line => {
+    const scoreRegex = /(\d+(?:\.\d+)?)\s*(?:\/|of|out of|grade:|marks:)\s*(\d+(?:\.\d+)?)/i;
+    const match = line.match(scoreRegex);
+    
+    if (match) {
+      const score = parseFloat(match[1]);
+      const maxScore = parseFloat(match[2]);
+      const beforeScore = line.substring(0, match.index).trim().replace(/[:-]$/, '').trim();
+      if (beforeScore.length > 3) {
+        let subject = beforeScore;
+        let examName = 'Exam';
+        
+        const matchSubject = SUBJECT_OPTIONS.find(s => beforeScore.toLowerCase().includes(s.toLowerCase()));
+        if (matchSubject) {
+          subject = matchSubject;
+          examName = beforeScore.replace(new RegExp(matchSubject, 'i'), '').trim().replace(/^[-\s:|]+/, '').trim() || 'Final';
+        } else {
+          const dividers = ['-', ':', '|', '–'];
+          for (const d of dividers) {
+            if (beforeScore.includes(d)) {
+              const parts = beforeScore.split(d).map(p => p.trim());
+              subject = parts[0];
+              examName = parts.slice(1).join(' ');
+              break;
+            }
+          }
+        }
+        
+        parsed.push({
+          subject: subject.substring(0, 50),
+          examName: examName.substring(0, 50) || 'Final Exam',
+          score,
+          maxScore: maxScore > 0 ? maxScore : 100
+        });
+      }
+    } else {
+      const simpleRegex = /(.*)\s+(\d+(?:\.\d+)?)\s*$/;
+      const simpleMatch = line.match(simpleRegex);
+      if (simpleMatch) {
+        const textPart = simpleMatch[1].trim();
+        const score = parseFloat(simpleMatch[2]);
+        
+        if (textPart.length > 3 && !/^\d+$/.test(textPart)) {
+          let subject = textPart;
+          let examName = 'Exam';
+          
+          const matchSubject = SUBJECT_OPTIONS.find(s => textPart.toLowerCase().includes(s.toLowerCase()));
+          if (matchSubject) {
+            subject = matchSubject;
+            examName = textPart.replace(new RegExp(matchSubject, 'i'), '').trim().replace(/^[-\s:|]+/, '').trim() || 'Final';
+          }
+          
+          parsed.push({
+            subject: subject.substring(0, 50),
+            examName: examName.substring(0, 50) || 'Assessment',
+            score,
+            maxScore: 100
+          });
+        }
+      }
+    }
+  });
+  
+  return parsed;
+};
+
+const fileToBase64 = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      const base64String = reader.result.split(',')[1];
+      resolve(base64String);
+    };
+    reader.onerror = error => reject(error);
+  });
+};
+
+const parseWithGemini = async (file, apiKey) => {
+  const base64Data = await fileToBase64(file);
+  const mimeType = file.type || 'application/octet-stream';
+  
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      contents: [
+        {
+          parts: [
+            {
+              text: "Extract all exam grades and marksheet records from this file. Return ONLY a valid JSON array of objects, with keys: \"subject\", \"examName\", \"score\", \"maxScore\". Ensure \"score\" and \"maxScore\" are numbers (floats). Do not include any markdown wrap or explanation, just the raw JSON array. Example: [{\"subject\": \"Mathematics\", \"examName\": \"Midterm\", \"score\": 85.5, \"maxScore\": 100}]"
+            },
+            {
+              inlineData: {
+                mimeType,
+                data: base64Data
+              }
+            }
+          ]
+        }
+      ],
+      generationConfig: {
+        responseMimeType: "application/json"
+      }
+    })
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error?.message || 'Failed to call Gemini AI API.');
+  }
+  
+  const result = await response.json();
+  const textResponse = result.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!textResponse) throw new Error('No content returned from Gemini.');
+  
+  let cleanedJsonText = textResponse.trim();
+  if (cleanedJsonText.startsWith('```')) {
+    cleanedJsonText = cleanedJsonText.replace(/^```(?:json)?/, '').replace(/```$/, '').trim();
+  }
+  
+  const data = JSON.parse(cleanedJsonText);
+  if (!Array.isArray(data)) throw new Error('AI did not return a list of grades.');
+  
+  return data.map(item => ({
+    subject: String(item.subject || 'General').substring(0, 50),
+    examName: String(item.examName || 'Assessment').substring(0, 50),
+    score: parseFloat(item.score) || 0,
+    maxScore: parseFloat(item.maxScore) || 100
+  }));
+};
+
 const Analytics = () => {
   const { user } = useAuth();
 
@@ -79,6 +350,15 @@ const Analytics = () => {
   const [formSuccess, setFormSuccess] = useState(false);
   const [sheetUploading, setSheetUploading] = useState(false);
   const [sheetMsg, setSheetMsg]             = useState('');
+
+  // New Marksheet Parsing States
+  const [parseMode, setParseMode]           = useState('local'); // 'local' | 'ai'
+  const [showKeyConfig, setShowKeyConfig]   = useState(false);
+  const [geminiKey, setGeminiKey]           = useState(() => {
+    return localStorage.getItem('apais_gemini_key') || import.meta.env.VITE_GEMINI_API_KEY || '';
+  });
+  const [parsedPreview, setParsedPreview]   = useState([]); // List of grades to preview: [{ subject, examName, score, maxScore }]
+  const [importingPreview, setImportingPreview] = useState(false);
 
   /* ── fetch ── */
   const fetchAll = async () => {
@@ -151,37 +431,91 @@ const Analytics = () => {
     }
   };
 
-  /* ── parse & bulk-import marksheet ── */
+  /* ── parse & preview marksheet ── */
   const handleMarksheetUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     setSheetUploading(true);
     setSheetMsg('');
-    const text = await file.text();
-    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-    // Expected CSV: Subject,ExamName,Score,MaxScore
-    const token = localStorage.getItem('token');
-    let imported = 0;
-    for (const line of lines) {
-      const parts = line.split(',').map(p => p.trim());
-      if (parts.length < 3) continue;
-      const [subject, examName, score, maxScore = '100'] = parts;
-      const numScore = parseFloat(score);
-      if (isNaN(numScore)) continue;
-      try {
-        await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'}/analytics/marks`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ subject, examName, score: numScore, maxScore: parseFloat(maxScore), date: new Date().toISOString() }),
-        });
-        imported++;
-      } catch {}
+    setParsedPreview([]);
+    
+    try {
+      let results = [];
+      if (parseMode === 'ai') {
+        if (!geminiKey) {
+          throw new Error('Google Gemini API Key is required for AI Smart Parsing. Please configure it below.');
+        }
+        results = await parseWithGemini(file, geminiKey);
+      } else {
+        const fileName = file.name.toLowerCase();
+        if (fileName.endsWith('.csv') || fileName.endsWith('.txt')) {
+          const text = await file.text();
+          results = parseLocalCSV(text);
+        } else if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+          results = await parseLocalExcel(file);
+        } else if (fileName.endsWith('.pdf')) {
+          results = await parseLocalPDF(file);
+        } else {
+          throw new Error('Unsupported file format for local parsing. Use CSV, Excel (XLSX), or PDF. For images, please toggle "AI Smart Parse".');
+        }
+      }
+      
+      if (!results || results.length === 0) {
+        throw new Error('No grades or marksheet records could be parsed. Please check the file formatting.');
+      }
+      
+      setParsedPreview(results);
+      setSheetMsg(`📊 Parsed ${results.length} grades successfully. Please preview and confirm below.`);
+    } catch (err) {
+      setSheetMsg(`❌ Parsing failed: ${err.message}`);
+    } finally {
+      setSheetUploading(false);
+      e.target.value = '';
     }
-    await fetchAll();
-    setSheetMsg(`✅ Imported ${imported} grade(s) from marksheet.`);
-    setSheetUploading(false);
-    e.target.value = '';
-    setTimeout(() => setSheetMsg(''), 5000);
+  };
+
+  /* ── confirm and import previewed marks ── */
+  const handleConfirmImport = async () => {
+    if (!parsedPreview.length) return;
+    setImportingPreview(true);
+    setError('');
+    
+    try {
+      const token = localStorage.getItem('token');
+      let imported = 0;
+      
+      for (const item of parsedPreview) {
+        try {
+          const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'}/analytics/marks`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({
+              subject: item.subject,
+              examName: item.examName,
+              score: item.score,
+              maxScore: item.maxScore,
+              date: new Date().toISOString()
+            }),
+          });
+          if (res.ok) imported++;
+        } catch (err) {
+          console.error('Failed to import item', item, err);
+        }
+      }
+      
+      await fetchAll();
+      setSheetMsg(`✅ Successfully imported ${imported} out of ${parsedPreview.length} grades!`);
+      setParsedPreview([]);
+      setTimeout(() => setSheetMsg(''), 5000);
+    } catch (err) {
+      setError(`Failed to complete import: ${err.message}`);
+    } finally {
+      setImportingPreview(false);
+    }
+  };
+
+  const handleRemovePreviewItem = (index) => {
+    setParsedPreview(prev => prev.filter((_, idx) => idx !== index));
   };
 
   /* ── derive per-subject averages for bar chart ── */
@@ -245,23 +579,218 @@ const Analytics = () => {
         <div className="marksheet-upload-info">
           <span className="marksheet-icon">📄</span>
           <div>
-            <h3>Upload Marksheet</h3>
-            <p>Import any format of file to bulk-load grades and test analytics integration. Format: <code>Subject, Exam Name, Score, Max Score</code></p>
+            <h3>Upload Academic Marksheet</h3>
+            <p>Select any CSV, TXT, Excel (XLSX), or PDF marksheet file to parse and bulk-load your grades.</p>
+            <div className="format-badges">
+              <span className="format-badge csv">.CSV</span>
+              <span className="format-badge excel">.XLSX</span>
+              <span className="format-badge pdf">.PDF</span>
+              <span className="format-badge text">.TXT</span>
+              <span className="format-badge image">.PNG / .JPG (AI Only)</span>
+            </div>
           </div>
         </div>
-        <div className="marksheet-upload-action">
-          {sheetMsg && <span className="sheet-success-msg">{sheetMsg}</span>}
-          <label className="btn-secondary marksheet-upload-btn" htmlFor="marksheetInput">
-            {sheetUploading ? '⏳ Importing...' : '📂 Upload Files'}
-          </label>
-          <input
-            id="marksheetInput" type="file"
-            style={{ display: 'none' }}
-            onChange={handleMarksheetUpload}
-            disabled={sheetUploading}
-          />
+
+        <div className="marksheet-controls-and-actions">
+          {/* Mode Selector */}
+          <div className="parser-mode-selector">
+            <button 
+              type="button" 
+              className={`mode-btn ${parseMode === 'local' ? 'active' : ''}`}
+              onClick={() => setParseMode('local')}
+            >
+              ⚡ Local Fast
+            </button>
+            <button 
+              type="button" 
+              className={`mode-btn ${parseMode === 'ai' ? 'active' : ''}`}
+              onClick={() => setParseMode('ai')}
+            >
+              🧠 AI Smart
+            </button>
+            
+            {parseMode === 'ai' && (
+              <button 
+                type="button" 
+                className={`key-config-btn ${geminiKey ? 'configured' : ''}`}
+                onClick={() => setShowKeyConfig(!showKeyConfig)}
+                title="Configure Gemini API Key"
+              >
+                🔑 {geminiKey ? 'Active' : 'Configure'}
+              </button>
+            )}
+          </div>
+
+          {showKeyConfig && parseMode === 'ai' && (
+            <div className="key-config-popover glassmorphism fade-in">
+              <h4>Gemini API Configuration</h4>
+              <p>Enter your Google AI Studio API Key to unlock image & handwritten scan parsing.</p>
+              <div className="key-input-row">
+                <input 
+                  type="password" 
+                  placeholder="AIzaSy..." 
+                  value={geminiKey}
+                  onChange={(e) => {
+                    setGeminiKey(e.target.value);
+                    localStorage.setItem('apais_gemini_key', e.target.value);
+                  }}
+                />
+                <button type="button" className="btn-close" onClick={() => setShowKeyConfig(false)}>Done</button>
+              </div>
+            </div>
+          )}
+
+          <div className="marksheet-upload-action">
+            {sheetMsg && <span className="sheet-success-msg">{sheetMsg}</span>}
+            <label className="btn-secondary marksheet-upload-btn" htmlFor="marksheetInput">
+              {sheetUploading ? '⏳ Analyzing...' : '📂 Choose File'}
+            </label>
+            <input
+              id="marksheetInput" type="file"
+              style={{ display: 'none' }}
+              onChange={handleMarksheetUpload}
+              disabled={sheetUploading}
+              accept={parseMode === 'ai' ? ".csv,.txt,.xlsx,.xls,.pdf,.png,.jpg,.jpeg" : ".csv,.txt,.xlsx,.xls,.pdf"}
+            />
+          </div>
         </div>
       </div>
+
+      {/* ── Preview Panel for parsed grades before final database save ── */}
+      {parsedPreview.length > 0 && (
+        <div className="parsed-preview-panel glassmorphism fade-in">
+          <div className="preview-header">
+            <div className="preview-header-title">
+              <span className="preview-icon">📋</span>
+              <div>
+                <h3>Verify Parsed Grades</h3>
+                <p>Review the extracted grades before importing them into your Academic Profile.</p>
+              </div>
+            </div>
+            <span className="preview-badge">{parsedPreview.length} grades found</span>
+          </div>
+
+          <div className="preview-list-container">
+            <table className="preview-table">
+              <thead>
+                <tr>
+                  <th>Subject</th>
+                  <th>Assessment / Exam</th>
+                  <th>Score</th>
+                  <th>Max Score</th>
+                  <th>Percentage</th>
+                  <th style={{ width: '50px' }}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {parsedPreview.map((item, index) => {
+                  const pct = Math.round((item.score / item.maxScore) * 100);
+                  const color = pct >= 80 ? 'var(--color-success)' : pct >= 70 ? 'var(--color-cyan)' : pct >= 50 ? 'var(--color-warning)' : 'var(--color-danger)';
+                  return (
+                    <tr key={index} className="preview-row animate-slide-in">
+                      <td>
+                        <select 
+                          value={SUBJECT_OPTIONS.includes(item.subject) ? item.subject : 'General'} 
+                          onChange={(e) => {
+                            const updated = [...parsedPreview];
+                            updated[index].subject = e.target.value;
+                            setParsedPreview(updated);
+                          }}
+                        >
+                          <option value="General">General / Custom</option>
+                          {SUBJECT_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                        </select>
+                        {!SUBJECT_OPTIONS.includes(item.subject) && (
+                          <input 
+                            type="text" 
+                            value={item.subject} 
+                            onChange={(e) => {
+                              const updated = [...parsedPreview];
+                              updated[index].subject = e.target.value;
+                              setParsedPreview(updated);
+                            }}
+                            className="custom-subject-input"
+                          />
+                        )}
+                      </td>
+                      <td>
+                        <input 
+                          type="text" 
+                          value={item.examName} 
+                          onChange={(e) => {
+                            const updated = [...parsedPreview];
+                            updated[index].examName = e.target.value;
+                            setParsedPreview(updated);
+                          }}
+                        />
+                      </td>
+                      <td>
+                        <input 
+                          type="number" 
+                          value={item.score} 
+                          onChange={(e) => {
+                            const updated = [...parsedPreview];
+                            updated[index].score = parseFloat(e.target.value) || 0;
+                            setParsedPreview(updated);
+                          }}
+                          style={{ width: '70px' }}
+                        />
+                      </td>
+                      <td>
+                        <input 
+                          type="number" 
+                          value={item.maxScore} 
+                          onChange={(e) => {
+                            const updated = [...parsedPreview];
+                            updated[index].maxScore = parseFloat(e.target.value) || 100;
+                            setParsedPreview(updated);
+                          }}
+                          style={{ width: '70px' }}
+                        />
+                      </td>
+                      <td style={{ color, fontWeight: '700' }}>
+                        {pct}%
+                      </td>
+                      <td>
+                        <button 
+                          type="button" 
+                          className="preview-remove-btn" 
+                          onClick={() => handleRemovePreviewItem(index)}
+                          title="Exclude from import"
+                        >
+                          ✕
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="preview-actions">
+            <button 
+              type="button" 
+              className="btn-cancel" 
+              onClick={() => {
+                setParsedPreview([]);
+                setSheetMsg('❌ Import cancelled.');
+                setTimeout(() => setSheetMsg(''), 3000);
+              }}
+            >
+              ✕ Clear Preview
+            </button>
+            <button 
+              type="button" 
+              className="btn-confirm" 
+              disabled={importingPreview}
+              onClick={handleConfirmImport}
+            >
+              {importingPreview ? '⏳ Saving grades...' : '✅ Save all to Dashboard'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Subject Performance Bars ── */}
       {subjectAverages.length > 0 && (
