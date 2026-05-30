@@ -426,31 +426,42 @@ const Analytics = () => {
     }
   };
 
-  /* ── parse & preview marksheet ── */
+  /* ── parse & preview marksheet (local parsers only — no API key needed) ── */
   const handleMarksheetUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     setSheetUploading(true);
     setSheetMsg('');
     setParsedPreview([]);
-    
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    
+
     try {
-      if (!apiKey) {
-        throw new Error('Google Gemini API Key is missing. Please add VITE_GEMINI_API_KEY to your frontend/.env file.');
+      let results = [];
+      const name = file.name.toLowerCase();
+
+      if (name.endsWith('.csv') || name.endsWith('.txt')) {
+        // Plain text — safe to read as text
+        const text = await file.text();
+        results = parseLocalCSV(text);
+      } else if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+        // Binary Excel — parsed via SheetJS (CDN, binary-safe)
+        results = await parseLocalExcel(file);
+      } else if (name.endsWith('.pdf')) {
+        // Binary PDF — parsed via PDF.js (CDN, binary-safe)
+        results = await parseLocalPDF(file);
+      } else {
+        throw new Error('Unsupported format. Please upload a CSV, TXT, Excel (.xlsx/.xls), or PDF file.');
       }
-      
-      const results = await parseWithGemini(file, apiKey);
-      
+
       if (!results || results.length === 0) {
-        throw new Error('No grades or marksheet records could be parsed. Please check the file formatting.');
+        throw new Error(
+          'No grades could be extracted. Make sure the file has columns: Subject, Exam Name, Score, Max Score.'
+        );
       }
-      
+
       setParsedPreview(results);
-      setSheetMsg(`📊 Parsed ${results.length} grades successfully. Please preview and confirm below.`);
+      setSheetMsg(`📊 ${results.length} grade(s) found — review and confirm below.`);
     } catch (err) {
-      setSheetMsg(`❌ Parsing failed: ${err.message}`);
+      setSheetMsg(`❌ ${err.message}`);
     } finally {
       setSheetUploading(false);
       e.target.value = '';
@@ -560,51 +571,31 @@ const Analytics = () => {
       {/* ── Marksheet Upload Panel ── */}
       <div className="marksheet-upload-panel glassmorphism">
         <div className="marksheet-upload-info">
-          <span className="marksheet-icon">🧠</span>
-          <div style={{ flex: 1 }}>
-            <h3>AI-Powered Marksheet Upload</h3>
-            <p>Upload your marksheet in any format (CSV, Excel, PDF, or scanned Images). Google Gemini AI will intelligently parse all subject grades automatically!</p>
+          <span className="marksheet-icon">📄</span>
+          <div>
+            <h3>Upload Marksheet</h3>
+            <p>Supports CSV, Excel (.xlsx / .xls), PDF, and plain text files. Grades are extracted automatically.</p>
             <div className="format-badges">
               <span className="format-badge csv">.CSV</span>
-              <span className="format-badge excel">.XLSX</span>
+              <span className="format-badge excel">.XLSX / .XLS</span>
               <span className="format-badge pdf">.PDF</span>
               <span className="format-badge text">.TXT</span>
-              <span className="format-badge image">.PNG / .JPG</span>
             </div>
-
-            {/* Instruction Warning if Gemini key is missing */}
-            {!import.meta.env.VITE_GEMINI_API_KEY && (
-              <div className="gemini-key-warning-card">
-                <span className="warning-icon">⚠️</span>
-                <div className="warning-content">
-                  <strong>Gemini AI API Key is not configured!</strong>
-                  <p>To enable smart marksheet uploads, follow these 2 simple steps:</p>
-                  <ol>
-                    <li>Get a free key from <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer">Google AI Studio</a>.</li>
-                    <li>Add <code>VITE_GEMINI_API_KEY=your_api_key_here</code> to your <code>frontend/.env</code> file and restart the dev server.</li>
-                  </ol>
-                </div>
-              </div>
-            )}
           </div>
         </div>
 
-        <div className="marksheet-controls-and-actions" style={{ justifyContent: 'center' }}>
-          <div className="marksheet-upload-action">
-            {sheetMsg && <span className="sheet-success-msg">{sheetMsg}</span>}
-            {import.meta.env.VITE_GEMINI_API_KEY && (
-              <label className="btn-secondary marksheet-upload-btn" htmlFor="marksheetInput">
-                {sheetUploading ? '⏳ AI Analyzing...' : '📂 Choose Marksheet'}
-              </label>
-            )}
-            <input
-              id="marksheetInput" type="file"
-              style={{ display: 'none' }}
-              onChange={handleMarksheetUpload}
-              disabled={sheetUploading}
-              accept=".csv,.txt,.xlsx,.xls,.pdf,.png,.jpg,.jpeg"
-            />
-          </div>
+        <div className="marksheet-upload-action">
+          {sheetMsg && <span className="sheet-success-msg">{sheetMsg}</span>}
+          <label className="marksheet-upload-btn" htmlFor="marksheetInput">
+            {sheetUploading ? '⏳ Parsing...' : '📂 Upload Files'}
+          </label>
+          <input
+            id="marksheetInput" type="file"
+            style={{ display: 'none' }}
+            onChange={handleMarksheetUpload}
+            disabled={sheetUploading}
+            accept=".csv,.txt,.xlsx,.xls,.pdf"
+          />
         </div>
       </div>
 

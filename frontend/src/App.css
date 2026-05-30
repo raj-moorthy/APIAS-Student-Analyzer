@@ -2829,9 +2829,10 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   align-items: center;
   gap: 1rem;
+  flex: 1;
 }
 
-.marksheet-icon { font-size: 2.2rem; }
+.marksheet-icon { font-size: 2rem; flex-shrink: 0; }
 
 .marksheet-upload-info h3 {
   font-size: 1rem;
@@ -2842,32 +2843,52 @@ input:focus, select:focus, textarea:focus {
 .marksheet-upload-info p {
   font-size: 0.82rem;
   color: var(--text-muted);
-  margin: 0;
+  margin: 0 0 0.6rem;
 }
 
-.marksheet-upload-info code {
-  background: var(--primary-light);
-  color: var(--primary-color);
-  padding: 0.1rem 0.4rem;
+/* Format type badges */
+.format-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+
+.format-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
   border-radius: 4px;
-  font-size: 0.78rem;
+  letter-spacing: 0.4px;
 }
+.format-badge.csv   { background: rgba(6,182,212,0.12);   color: #06b6d4; border: 1px solid rgba(6,182,212,0.25); }
+.format-badge.excel { background: rgba(16,185,129,0.12);  color: #10b981; border: 1px solid rgba(16,185,129,0.25); }
+.format-badge.pdf   { background: rgba(239,68,68,0.12);   color: #ef4444; border: 1px solid rgba(239,68,68,0.25); }
+.format-badge.text  { background: rgba(245,158,11,0.12);  color: #f59e0b; border: 1px solid rgba(245,158,11,0.25); }
 
 .marksheet-upload-action {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  flex-shrink: 0;
 }
 
 .marksheet-upload-btn {
-  padding: 0.55rem 1.25rem;
-  font-size: 0.85rem;
+  padding: 0.6rem 1.4rem;
+  font-size: 0.875rem;
   cursor: pointer;
   border-radius: 8px;
   font-weight: 700;
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
+  background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 14px rgba(67,97,238,0.3);
+  transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
+  white-space: nowrap;
+}
+
+.marksheet-upload-btn:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(67,97,238,0.4);
 }
 
 .sheet-success-msg {
@@ -2875,6 +2896,7 @@ input:focus, select:focus, textarea:focus {
   font-weight: 600;
   color: #10b981;
 }
+
 
 /* ==========================================================================
    NOTIFY BAR (Planner / Goals)
