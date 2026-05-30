@@ -1,10 +1,13 @@
 package controllers
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -277,8 +280,7 @@ func GetPerformanceAnalytics(w http.ResponseWriter, r *http.Request) {
 	var overallSum float64
 	var strengths []string
 	var improvementAreas []string
-	var recommendations []string
-	var studyPlan []map[string]interface{}
+	var gradeDetailsText []string
 
 	for sub, sum := range subjectSums {
 		count := subjectCounts[sub]
@@ -286,7 +288,6 @@ func GetPerformanceAnalytics(w http.ResponseWriter, r *http.Request) {
 		overallSum += avg
 
 		trend := "stable"
-		// Simple trend calculation if there are multiple marks for the subject
 		var subMarks []Mark
 		for _, m := range marks {
 			if m.Subject == sub {
@@ -294,7 +295,6 @@ func GetPerformanceAnalytics(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		if len(subMarks) > 1 {
-			// Compare last two by date
 			lastIdx := len(subMarks) - 1
 			prevIdx := len(subMarks) - 2
 			lastPerc := (subMarks[lastIdx].Score / subMarks[lastIdx].MaxScore) * 100
@@ -312,6 +312,8 @@ func GetPerformanceAnalytics(w http.ResponseWriter, r *http.Request) {
 			"trend":   trend,
 		})
 
+		gradeDetailsText = append(gradeDetailsText, fmt.Sprintf("- Subject: %s, Average: %d%%, Recent Trend: %s", sub, int(avg), trend))
+
 		if avg >= 80 {
 			strengths = append(strengths, sub)
 		} else if avg < 70 {
@@ -321,41 +323,100 @@ func GetPerformanceAnalytics(w http.ResponseWriter, r *http.Request) {
 
 	overallScore := int(overallSum / float64(len(subjectSums)))
 
-	// Formulate actionable plan and recommendations dynamically
+	// ── AI recommendation flow with traditional rule-based fallback ──
+	learningStyle := "Structured Analytics Learner"
+	recommendations := []string{
+		"Use spaced-repetition models (like 2-3-5-7 day reviews) to strengthen long-term memorization.",
+	}
+	for _, area := range improvementAreas {
+		recommendations = append(recommendations, fmt.Sprintf("Focus on solving active recall flashcards and practicing textbook questions for %s.", area))
+	}
+	studyPlan := []map[string]interface{}{
+		{
+			"step":        "Consistent Spaced Repetition",
+			"description": "Schedule a 20-minute daily review session of concepts covered 2 days ago to retain theoretical definitions.",
+			"priority":    "Medium",
+		},
+	}
+
+	apiKey := os.Getenv("GEMINI_API_KEY")
+	if apiKey != "" {
+		gradesListStr := strings.Join(gradeDetailsText, "\n")
+		prompt := fmt.Sprintf(`You are an expert academic advisor. Analyze this student's real grades and averages:
+%s
+
+Formulate exactly:
+1. A unique, personalized Learning Style representing their cognitive profile (e.g. 'Project-Driven Applied Learner' or 'Systematic Analytical Thinker') based on their strongest subjects.
+2. Exactly 3 to 4 deeply customized, practical performance recommendations tailored to their actual subjects and weaker areas.
+3. 2 to 3 actionable, highly specific study plan steps. Each step must detail the subject name, what to study, and priority. Do NOT include generic template text.
+
+Return ONLY a valid JSON object matching exactly this structure (do NOT wrap in markdown or backticks):
+{
+  "learningStyle": "creative title string",
+  "recommendations": ["recommendation 1", "recommendation 2", "recommendation 3"],
+  "studyPlan": [
+    {"step": "Step Title", "description": "highly specific details", "priority": "High"},
+    {"step": "Another Step", "description": "highly specific details", "priority": "Medium"}
+  ]
+}`, gradesListStr)
+
+		reqBody := geminiRequest{
+			Contents: []geminiContent{
+				{
+					Parts: []geminiPart{
+						{Text: prompt},
+					},
+				},
+			},
+		}
+
+		bodyJSON, err := json.Marshal(reqBody)
+		if err == nil {
+			url := fmt.Sprintf(
+				"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=%s",
+				apiKey,
+			)
+			resp, err := http.Post(url, "application/json", bytes.NewReader(bodyJSON))
+			if err == nil {
+				defer resp.Body.Close()
+				respBytes, _ := io.ReadAll(resp.Body)
+				var geminiResp geminiResponse
+				if json.Unmarshal(respBytes, &geminiResp) == nil && len(geminiResp.Candidates) > 0 && len(geminiResp.Candidates[0].Content.Parts) > 0 {
+					rawText := geminiResp.Candidates[0].Content.Parts[0].Text
+					cleanText := strings.TrimSpace(rawText)
+					if strings.HasPrefix(cleanText, "```") {
+						cleanText = strings.TrimPrefix(cleanText, "```json")
+						cleanText = strings.TrimPrefix(cleanText, "```")
+						cleanText = strings.TrimSuffix(cleanText, "```")
+						cleanText = strings.TrimSpace(cleanText)
+					}
+
+					var aiResult struct {
+						LearningStyle   string                   `json:"learningStyle"`
+						Recommendations []string                 `json:"recommendations"`
+						StudyPlan       []map[string]interface{} `json:"studyPlan"`
+					}
+					if json.Unmarshal([]byte(cleanText), &aiResult) == nil && len(aiResult.Recommendations) > 0 {
+						learningStyle = aiResult.LearningStyle
+						recommendations = aiResult.Recommendations
+						studyPlan = aiResult.StudyPlan
+					}
+				}
+			}
+		}
+	}
+
 	if len(strengths) == 0 {
 		strengths = []string{"General Effort", "Consistency"}
 	}
 	if len(improvementAreas) == 0 {
-		improvementAreas = []string{"Time management under exam conditions"}
-		recommendations = append(recommendations, "Practice mock papers under strictly timed conditions.")
+		improvementAreas = []string{"Maintain current high standard"}
 	}
 
-	for _, area := range improvementAreas {
-		if area == "General effort" || area == "Time management under exam conditions" {
-			continue
-		}
-		recommendations = append(recommendations, fmt.Sprintf("Focus on solving active recall flashcards and practicing textbook questions for %s.", area))
-		studyPlan = append(studyPlan, map[string]interface{}{
-			"step":        fmt.Sprintf("Boost proficiency in %s", area),
-			"description": "Dedicate at least 3 hours of focused active study this week. Practice 15 custom practice problems and review missed exam questions.",
-			"priority":    "High",
-		})
-	}
-
-	// Add general recommendations and study plans if list is short
-	if len(recommendations) < 3 {
-		recommendations = append(recommendations, "Use spaced-repetition models (like 2-3-5-7 day reviews) to strengthen long-term memorization.")
-	}
 	if len(studyPlan) == 0 {
 		studyPlan = append(studyPlan, map[string]interface{}{
 			"step":        "Maintain current standard",
 			"description": "Keep up your excellent scores! Advance ahead by reading upcoming topics and tutoring peers to solidify memory.",
-			"priority":    "Medium",
-		})
-	} else {
-		studyPlan = append(studyPlan, map[string]interface{}{
-			"step":        "Consistent Spaced Repetition",
-			"description": "Schedule a 20-minute daily review session of concepts covered 2 days ago to retain theoretical definitions.",
 			"priority":    "Medium",
 		})
 	}
@@ -365,7 +426,7 @@ func GetPerformanceAnalytics(w http.ResponseWriter, r *http.Request) {
 		"subjectScores":    subjectScores,
 		"strengths":        strengths,
 		"improvementAreas": improvementAreas,
-		"learningStyle":    "Structured Analytics Learner",
+		"learningStyle":    learningStyle,
 		"recommendations":  recommendations,
 		"studyPlan":        studyPlan,
 	}
