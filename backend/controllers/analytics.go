@@ -54,11 +54,29 @@ func GetMarks(w http.ResponseWriter, r *http.Request) {
 	}
 	defer cursor.Close(context.Background())
 
-	var marks []Mark
-	if err = cursor.All(context.Background(), &marks); err != nil {
+	var rawMarks []Mark
+	if err = cursor.All(context.Background(), &rawMarks); err != nil {
 		http.Error(w, "Failed to decode marks", http.StatusInternalServerError)
 		return
 	}
+
+	var marks []Mark
+	var badIds []primitive.ObjectID
+	for _, m := range rawMarks {
+		if isCleanSubject(m.Subject) {
+			marks = append(marks, m)
+		} else {
+			badIds = append(badIds, m.ID)
+		}
+	}
+
+	// Proactively clean the database in the background of any corrupted binary records
+	if len(badIds) > 0 {
+		go func(ids []primitive.ObjectID) {
+			coll.DeleteMany(context.Background(), bson.M{"_id": bson.M{"$in": ids}})
+		}(badIds)
+	}
+
 	if marks == nil {
 		marks = []Mark{}
 	}
@@ -206,10 +224,17 @@ func GetPerformanceAnalytics(w http.ResponseWriter, r *http.Request) {
 	}
 	defer cursor.Close(context.Background())
 
-	var marks []Mark
-	if err = cursor.All(context.Background(), &marks); err != nil {
+	var rawMarks []Mark
+	if err = cursor.All(context.Background(), &rawMarks); err != nil {
 		http.Error(w, "Failed to decode marks", http.StatusInternalServerError)
 		return
+	}
+
+	var marks []Mark
+	for _, m := range rawMarks {
+		if isCleanSubject(m.Subject) {
+			marks = append(marks, m)
+		}
 	}
 
 	// If no marks logged, return standard default initial analysis
@@ -311,7 +336,7 @@ func GetPerformanceAnalytics(w http.ResponseWriter, r *http.Request) {
 		recommendations = append(recommendations, fmt.Sprintf("Focus on solving active recall flashcards and practicing textbook questions for %s.", area))
 		studyPlan = append(studyPlan, map[string]interface{}{
 			"step":        fmt.Sprintf("Boost proficiency in %s", area),
-			"description": fmt.Sprintf("Dedicate at least 3 hours of focused active study this week. Practice 15 custom practice problems and review missed exam questions.", area),
+			"description": "Dedicate at least 3 hours of focused active study this week. Practice 15 custom practice problems and review missed exam questions.",
 			"priority":    "High",
 		})
 	}
@@ -375,13 +400,19 @@ func GetRiskAnalytics(w http.ResponseWriter, r *http.Request) {
 	var overallScore float64 = 85.0 // starting baseline
 	if marksCount > 0 {
 		cursor, _ := marksColl.Find(context.Background(), bson.M{"user_id": userOID})
-		var marks []Mark
-		_ = cursor.All(context.Background(), &marks)
+		var rawMarks []Mark
+		_ = cursor.All(context.Background(), &rawMarks)
 		var sum float64
-		for _, m := range marks {
-			sum += (m.Score / m.MaxScore) * 100
+		var count float64
+		for _, m := range rawMarks {
+			if isCleanSubject(m.Subject) {
+				sum += (m.Score / m.MaxScore) * 100
+				count++
+			}
 		}
-		overallScore = sum / float64(len(marks))
+		if count > 0 {
+			overallScore = sum / count
+		}
 	}
 
 	tasksColl := models.GetCollection(client, "study_tasks")
@@ -461,4 +492,36 @@ func GetRiskAnalytics(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+// isCleanSubject returns false if the subject name contains invalid characters or looks like corrupted binary data.
+func isCleanSubject(subject string) bool {
+	// If it contains the Unicode replacement character
+	if strings.Contains(subject, "\uFFFD") {
+		return false
+	}
+	// If it has weird control chars or is mostly binary garbage
+	nonPrintable := 0
+	for _, r := range subject {
+		if r < 32 || r > 126 {
+			// Allow standard international characters if they are letters/spaces,
+			// but if it's junk characters like control sequences, mark it as junk
+			if r < 32 {
+				return false
+			}
+			nonPrintable++
+		}
+	}
+	if len(subject) > 0 && float64(nonPrintable)/float64(len(subject)) > 0.15 {
+		return false
+	}
+	// If the name is extremely long or short
+	if len(subject) > 80 || len(subject) < 2 {
+		return false
+	}
+	// Check for common binary parser remnants
+	if strings.Contains(subject, "") || strings.Contains(subject, "%%") {
+		return false
+	}
+	return true
 }
