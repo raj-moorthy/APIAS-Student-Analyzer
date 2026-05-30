@@ -4,10 +4,14 @@ import { useAuth } from '../context/AuthContext';
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 
 const SUBJECT_OPTIONS = [
+  // Pre-Primary & Primary
+  'Nursery Rhymes & Alphabets', 'Elementary Math', 'Basic English Phonics', 'Primary Science & Nature',
+  // School & College Core
   'Mathematics', 'Physics', 'Chemistry', 'Computer Science',
-  'Biology', 'English', 'History', 'Economics', 'Geography',
-  'Data Science', 'Machine Learning', 'Web Development',
-  'Mechanical Engineering', 'Electrical Engineering',
+  'Biology', 'English Literature', 'History', 'Economics', 'Geography',
+  // Advanced & University Specializations
+  'Data Science', 'Machine Learning & AI', 'Web Development',
+  'Mechanical Engineering', 'Electrical Engineering', 'Research Methodology & Thesis Writing'
 ];
 
 const DOMAIN_OPTIONS = [
@@ -18,6 +22,35 @@ const DOMAIN_OPTIONS = [
 // ─── Curated Blog Articles Pool ──────────────────────────────────────────────
 // ─── Curated Blog Articles Pool ──────────────────────────────────────────────
 const BLOG_ARTICLES_POOL = [
+  // Pre-Primary & Primary
+  {
+    id: 'kid_rhyme1',
+    title: 'Phonics & Alphabet Fun for Kindergarteners',
+    author: 'Primary Education Team',
+    source: 'starfall.com',
+    url: 'https://www.starfall.com/h/index-kindergarten.php',
+    description: 'Fun phonics sounds, simple letter matching, and interactive reading tutorials for Lower and Upper Kindergarten.',
+    category: 'Educational Activity',
+    readTime: '3 min read',
+    emoji: '👶',
+    subjects: ['Nursery Rhymes & Alphabets', 'Basic English Phonics'],
+    domains: ['Tutorial', 'Lab / Practical'],
+    difficulty: 'lkg'
+  },
+  {
+    id: 'kid_math1',
+    title: 'Counting to 10 with Interactive Colors',
+    author: 'Montessori Experts',
+    source: 'coolmath4kids.com',
+    url: 'https://www.coolmath4kids.com/',
+    description: 'An interactive coloring and animal counting guide tailored specifically for LKG and UKG children.',
+    category: 'Interactive Game',
+    readTime: '5 min read',
+    emoji: '🔢',
+    subjects: ['Elementary Math'],
+    domains: ['Tutorial', 'Lab / Practical'],
+    difficulty: 'ukg'
+  },
   // General Study Skills & Productivity
   {
     id: 'b1',
@@ -32,7 +65,7 @@ const BLOG_ARTICLES_POOL = [
     subjects: ['all'],
     domains: ['Tutorial', 'Exam Preparation'],
     isMedium: true,
-    difficulty: 'beginner'
+    difficulty: 'ug'
   },
   {
     id: 'b2',
@@ -47,7 +80,7 @@ const BLOG_ARTICLES_POOL = [
     subjects: ['all'],
     domains: ['Tutorial', 'Crash Course'],
     isMedium: true,
-    difficulty: 'beginner'
+    difficulty: 'class_6_10'
   },
   // Computer Science & Software
   {
@@ -63,7 +96,7 @@ const BLOG_ARTICLES_POOL = [
     subjects: ['Computer Science'],
     domains: ['Full Course Lecture', 'Problem Solving'],
     isResearchPaper: true,
-    difficulty: 'advanced'
+    difficulty: 'phd'
   },
   {
     id: 'cs_med1',
@@ -78,7 +111,7 @@ const BLOG_ARTICLES_POOL = [
     subjects: ['Computer Science', 'Web Development'],
     domains: ['Tutorial', 'Problem Solving', 'Exam Preparation'],
     isMedium: true,
-    difficulty: 'intermediate'
+    difficulty: 'ug'
   },
   // Web Development
   {
@@ -94,7 +127,7 @@ const BLOG_ARTICLES_POOL = [
     subjects: ['Web Development', 'Computer Science'],
     domains: ['Full Course Lecture', 'Problem Solving'],
     isResearchPaper: true,
-    difficulty: 'advanced'
+    difficulty: 'pg'
   },
   {
     id: 'web_med1',
@@ -109,7 +142,7 @@ const BLOG_ARTICLES_POOL = [
     subjects: ['Web Development'],
     domains: ['Tutorial', 'Lab / Practical'],
     isMedium: true,
-    difficulty: 'intermediate'
+    difficulty: 'ug'
   },
   // Machine Learning
   {
@@ -122,10 +155,10 @@ const BLOG_ARTICLES_POOL = [
     category: 'Research Paper',
     readTime: '15 pages',
     emoji: '🔬',
-    subjects: ['Machine Learning', 'Data Science', 'Computer Science'],
+    subjects: ['Machine Learning & AI', 'Computer Science'],
     domains: ['Full Course Lecture', 'Problem Solving'],
     isResearchPaper: true,
-    difficulty: 'advanced'
+    difficulty: 'phd'
   },
   {
     id: 'ml_med1',
@@ -137,10 +170,10 @@ const BLOG_ARTICLES_POOL = [
     category: 'Medium Blog',
     readTime: '12 min read',
     emoji: '🌐',
-    subjects: ['Machine Learning', 'Data Science'],
+    subjects: ['Machine Learning & AI'],
     domains: ['Tutorial', 'Crash Course', 'Problem Solving'],
     isMedium: true,
-    difficulty: 'intermediate'
+    difficulty: 'pg'
   },
   // Mathematics
   {
@@ -156,7 +189,7 @@ const BLOG_ARTICLES_POOL = [
     subjects: ['Mathematics', 'Computer Science'],
     domains: ['Full Course Lecture', 'Problem Solving'],
     isResearchPaper: true,
-    difficulty: 'advanced'
+    difficulty: 'phd'
   },
   {
     id: 'math_med1',
@@ -168,10 +201,10 @@ const BLOG_ARTICLES_POOL = [
     category: 'Medium Blog',
     readTime: '9 min read',
     emoji: '🌐',
-    subjects: ['Mathematics', 'Data Science', 'Machine Learning'],
+    subjects: ['Mathematics', 'Machine Learning & AI'],
     domains: ['Tutorial', 'Crash Course'],
     isMedium: true,
-    difficulty: 'intermediate'
+    difficulty: 'ug'
   },
   // Physics
   {
@@ -187,7 +220,7 @@ const BLOG_ARTICLES_POOL = [
     subjects: ['Physics'],
     domains: ['Full Course Lecture', 'Problem Solving'],
     isResearchPaper: true,
-    difficulty: 'advanced'
+    difficulty: 'phd'
   },
   {
     id: 'phys_med1',
@@ -199,10 +232,10 @@ const BLOG_ARTICLES_POOL = [
     category: 'Medium Blog',
     readTime: '11 min read',
     emoji: '🌐',
-    subjects: ['Physics', 'Electrical Engineering'],
+    subjects: ['Physics'],
     domains: ['Tutorial', 'Crash Course'],
     isMedium: true,
-    difficulty: 'intermediate'
+    difficulty: 'class_11_12'
   },
   // Biology
   {
@@ -218,7 +251,7 @@ const BLOG_ARTICLES_POOL = [
     subjects: ['Biology', 'Chemistry'],
     domains: ['Full Course Lecture', 'Lab / Practical'],
     isResearchPaper: true,
-    difficulty: 'advanced'
+    difficulty: 'phd'
   },
   // Economics
   {
@@ -234,7 +267,22 @@ const BLOG_ARTICLES_POOL = [
     subjects: ['Economics'],
     domains: ['Full Course Lecture', 'Problem Solving'],
     isResearchPaper: true,
-    difficulty: 'advanced'
+    difficulty: 'phd'
+  },
+  // PhD Special
+  {
+    id: 'phd_thesis1',
+    title: 'How to Write a Stellar PhD Dissertation & Literature Review',
+    author: 'Dr. Sarah Peterson (Oxford)',
+    source: 'nature.com/careers',
+    url: 'https://www.nature.com/articles/d41586-020-00102-x',
+    description: 'A step-by-step masterclass on formulating a thesis question, structuring your literature review, and passing the viva.',
+    category: 'Academic Guide',
+    readTime: '15 min read',
+    emoji: '🎓',
+    subjects: ['Research Methodology & Thesis Writing'],
+    domains: ['Full Course Lecture', 'Exam Preparation'],
+    difficulty: 'phd'
   }
 ];
 
@@ -251,7 +299,7 @@ const getRecommendedBlogs = (selectedSubject, selectedDomain, selectedLevel) => 
       blog.domains.includes('all') ||
       blog.domains.some(d => d.toLowerCase() === selectedDomain.toLowerCase());
 
-    // 3. Difficulty Level filter
+    // 3. Level filter
     const matchesLevel = !selectedLevel || 
       blog.difficulty === selectedLevel;
 
@@ -260,7 +308,7 @@ const getRecommendedBlogs = (selectedSubject, selectedDomain, selectedLevel) => 
 
   if (filtered.length > 0) return filtered;
   
-  // Fallback to ignoring level if no strict match
+  // Fallback ignoring level
   const subDomainFiltered = BLOG_ARTICLES_POOL.filter(blog => {
     const matchesSubject = !selectedSubject || 
       selectedSubject === 'Custom' ||
@@ -273,10 +321,35 @@ const getRecommendedBlogs = (selectedSubject, selectedDomain, selectedLevel) => 
   });
   if (subDomainFiltered.length > 0) return subDomainFiltered;
 
-  return BLOG_ARTICLES_POOL.filter(b => b.subjects.includes('all'));
+  return BLOG_ARTICLES_POOL.filter(b => b.subjects.includes('all') || b.difficulty === 'ug');
 };
 
 const VIDEO_RESOURCES_POOL = [
+  // LKG / UKG / Kids Rhymes & Phonics
+  {
+    id: 'KID_RHYME_VID',
+    title: 'Phonics Song with Two Words - A to Z Phonics Rhymes',
+    channel: 'Chuchu TV Nursery Rhymes',
+    views: '450M views',
+    duration: '6:12',
+    thumbnail: 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?w=360&q=80',
+    url: 'https://www.youtube.com/watch?v=hq3yfQnllfQ',
+    subject: 'Nursery Rhymes & Alphabets',
+    domain: 'Tutorial',
+    difficulty: 'lkg'
+  },
+  {
+    id: 'KID_MATH_VID',
+    title: 'Numbers Song 1 to 10 - Counting Nursery Rhymes for Kids',
+    channel: 'Cocomelon Nursery Rhymes',
+    views: '820M views',
+    duration: '3:45',
+    thumbnail: 'https://images.unsplash.com/photo-1502086223501-7ea6ecd79368?w=360&q=80',
+    url: 'https://www.youtube.com/watch?v=V_0Z_tG8_J0',
+    subject: 'Elementary Math',
+    domain: 'Tutorial',
+    difficulty: 'ukg'
+  },
   // Computer Science / Web Dev / Data Science / ML
   {
     id: 'CS_TUT_1',
@@ -288,7 +361,7 @@ const VIDEO_RESOURCES_POOL = [
     url: 'https://www.youtube.com/watch?v=O5nskjZ_GoI',
     subject: 'Computer Science',
     domain: 'Crash Course',
-    difficulty: 'beginner'
+    difficulty: 'class_6_10'
   },
   {
     id: 'CS_LEC_1',
@@ -300,7 +373,7 @@ const VIDEO_RESOURCES_POOL = [
     url: 'https://www.youtube.com/watch?v=kQt2LnduKug',
     subject: 'Computer Science',
     domain: 'Full Course Lecture',
-    difficulty: 'advanced'
+    difficulty: 'ug'
   },
   {
     id: 'WEB_TUT_1',
@@ -312,7 +385,7 @@ const VIDEO_RESOURCES_POOL = [
     url: 'https://www.youtube.com/watch?v=G3e-cpL7ofc',
     subject: 'Web Development',
     domain: 'Tutorial',
-    difficulty: 'beginner'
+    difficulty: 'class_11_12'
   },
   {
     id: 'WEB_CRASH_1',
@@ -324,7 +397,7 @@ const VIDEO_RESOURCES_POOL = [
     url: 'https://www.youtube.com/watch?v=w7ejDZ8SWv8',
     subject: 'Web Development',
     domain: 'Crash Course',
-    difficulty: 'intermediate'
+    difficulty: 'ug'
   },
   {
     id: 'ML_TUT_1',
@@ -334,9 +407,9 @@ const VIDEO_RESOURCES_POOL = [
     duration: '2:40:00',
     thumbnail: 'https://images.unsplash.com/photo-1527474305487-b87b222841cc?w=360&q=80',
     url: 'https://www.youtube.com/watch?v=GwIo3gTOB3I',
-    subject: 'Machine Learning',
+    subject: 'Machine Learning & AI',
     domain: 'Tutorial',
-    difficulty: 'beginner'
+    difficulty: 'ug'
   },
   {
     id: 'ML_LEC_1',
@@ -346,9 +419,9 @@ const VIDEO_RESOURCES_POOL = [
     duration: '1:16:00',
     thumbnail: 'https://images.unsplash.com/photo-1501504905252-473c47e087f8?w=360&q=80',
     url: 'https://www.youtube.com/watch?v=jGwO_b-YFfk',
-    subject: 'Machine Learning',
+    subject: 'Machine Learning & AI',
     domain: 'Full Course Lecture',
-    difficulty: 'advanced'
+    difficulty: 'pg'
   },
   // Mathematics
   {
@@ -361,7 +434,7 @@ const VIDEO_RESOURCES_POOL = [
     url: 'https://www.youtube.com/watch?v=OmJ-4B-mS-Y',
     subject: 'Mathematics',
     domain: 'Tutorial',
-    difficulty: 'beginner'
+    difficulty: 'class_6_10'
   },
   {
     id: 'MATH_CRASH_1',
@@ -373,7 +446,7 @@ const VIDEO_RESOURCES_POOL = [
     url: 'https://www.youtube.com/watch?v=fYyAMM7KAdY',
     subject: 'Mathematics',
     domain: 'Crash Course',
-    difficulty: 'intermediate'
+    difficulty: 'ug'
   },
   {
     id: 'MATH_SOLVE_1',
@@ -385,7 +458,7 @@ const VIDEO_RESOURCES_POOL = [
     url: 'https://www.youtube.com/watch?v=83B6fHn2_iE',
     subject: 'Mathematics',
     domain: 'Problem Solving',
-    difficulty: 'advanced'
+    difficulty: 'pg'
   },
   // Physics
   {
@@ -398,7 +471,7 @@ const VIDEO_RESOURCES_POOL = [
     url: 'https://www.youtube.com/watch?v=ZihywtixUYo',
     subject: 'Physics',
     domain: 'Tutorial',
-    difficulty: 'beginner'
+    difficulty: 'class_6_10'
   },
   {
     id: 'PHYS_CRASH_1',
@@ -410,7 +483,7 @@ const VIDEO_RESOURCES_POOL = [
     url: 'https://www.youtube.com/watch?v=1tJk905s61k',
     subject: 'Physics',
     domain: 'Exam Preparation',
-    difficulty: 'intermediate'
+    difficulty: 'class_11_12'
   },
   // Chemistry
   {
@@ -423,7 +496,7 @@ const VIDEO_RESOURCES_POOL = [
     url: 'https://www.youtube.com/watch?v=mDae28Q1K9k',
     subject: 'Chemistry',
     domain: 'Tutorial',
-    difficulty: 'beginner'
+    difficulty: 'class_11_12'
   },
   {
     id: 'CHEM_CRASH_1',
@@ -435,7 +508,7 @@ const VIDEO_RESOURCES_POOL = [
     url: 'https://www.youtube.com/watch?v=U3yG7c9iW0M',
     subject: 'Chemistry',
     domain: 'Crash Course',
-    difficulty: 'intermediate'
+    difficulty: 'class_11_12'
   },
   // Biology
   {
@@ -448,7 +521,7 @@ const VIDEO_RESOURCES_POOL = [
     url: 'https://www.youtube.com/watch?v=8IlzKri08kk',
     subject: 'Biology',
     domain: 'Tutorial',
-    difficulty: 'beginner'
+    difficulty: 'class_1_5'
   },
   // Economics
   {
@@ -461,7 +534,20 @@ const VIDEO_RESOURCES_POOL = [
     url: 'https://www.youtube.com/watch?v=2YULdjmUtS8',
     subject: 'Economics',
     domain: 'Crash Course',
-    difficulty: 'intermediate'
+    difficulty: 'class_11_12'
+  },
+  // PhD Special
+  {
+    id: 'PHD_THESIS_VID',
+    title: 'How to Write a Literature Review (PhD & Master\'s level)',
+    channel: 'Grad Coach',
+    views: '540K views',
+    duration: '15:20',
+    thumbnail: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=360&q=80',
+    url: 'https://www.youtube.com/watch?v=N4t_1b1u7K8',
+    subject: 'Research Methodology & Thesis Writing',
+    domain: 'Full Course Lecture',
+    difficulty: 'phd'
   }
 ];
 
@@ -471,15 +557,20 @@ const SUBJECT_KEYWORDS = {
   'chemistry': ['chem', 'organic', 'atom', 'molecule', 'reaction', 'periodic', 'bond', 'acid', 'base', 'compound', 'element'],
   'computer science': ['computer', 'program', 'code', 'algorithm', 'data structure', 'python', 'java', 'c++', 'binary', 'software', 'cpu', 'operating system'],
   'biology': ['cell', 'bio', 'dna', 'rna', 'evolution', 'organism', 'gene', 'plant', 'animal', 'ecology', 'mitosis', 'human body'],
-  'english': ['english', 'grammar', 'literature', 'writing', 'essay', 'vocab', 'read', 'speak', 'sentence'],
+  'english literature': ['english', 'grammar', 'literature', 'writing', 'essay', 'vocab', 'read', 'speak', 'sentence', 'shakespeare', 'novel'],
   'history': ['history', 'war', 'revolution', 'century', 'ancient', 'empire', 'historical', 'civilization', 'president'],
   'economics': ['econ', 'macro', 'micro', 'supply', 'demand', 'finance', 'market', 'inflation', 'gdp', 'trade'],
   'geography': ['geography', 'earth', 'map', 'continent', 'ocean', 'climate', 'rock', 'gis', 'landscape'],
   'data science': ['data science', 'statistics', 'panda', 'numpy', 'visualization', 'probability', 'r programming', 'data analysis'],
-  'machine learning': ['machine learning', 'neural', 'deep learning', 'regression', 'svm', 'model', 'dataset', 'karpathy', 'tensorflow', 'pytorch', 'ai', 'artificial intelligence'],
+  'machine learning & ai': ['machine learning', 'neural', 'deep learning', 'regression', 'svm', 'model', 'dataset', 'karpathy', 'tensorflow', 'pytorch', 'ai', 'artificial intelligence'],
   'web development': ['web', 'html', 'css', 'javascript', 'react', 'node', 'frontend', 'backend', 'api', 'website', 'flexbox', 'grid', 'express'],
   'mechanical engineering': ['mechanical', 'thermo', 'stress', 'fluid', 'cad', 'truss', 'engine', 'machine design', 'dynamics', 'force', 'solidworks'],
-  'electrical engineering': ['electrical', 'circuit', 'resistor', 'voltage', 'op-amp', 'ee', 'current', 'diode', 'transistor', 'signal', 'multisim', 'arduino']
+  'electrical engineering': ['electrical', 'circuit', 'resistor', 'voltage', 'op-amp', 'ee', 'current', 'diode', 'transistor', 'signal', 'multisim', 'arduino'],
+  'nursery rhymes & alphabets': ['rhymes', 'alphabet', 'phonics', 'kids song', 'nursery', 'cocomelon', 'cartoon', 'toddler', 'kindergarten', 'sing'],
+  'elementary math': ['counting', 'addition', 'subtraction', 'numbers', 'math for kids', 'multiply', 'cool math', 'elementary'],
+  'basic english phonics': ['phonics', 'abc', 'vowel', 'letters', 'spell', 'reading for kids', 'sounds'],
+  'primary science & nature': ['science for kids', 'nature', 'animal sounds', 'planet earth', 'plant life', 'water cycle', 'basic science'],
+  'research methodology & thesis writing': ['thesis', 'literature review', 'dissertation', 'research proposal', 'academic writing', 'phd writing', 'methodology', 'viva']
 };
 
 const getRecommendedVideos = (selectedSubject, selectedDomain, selectedLevel, backendVideos) => {
@@ -496,13 +587,23 @@ const getRecommendedVideos = (selectedSubject, selectedDomain, selectedLevel, ba
 
   const matchedBackend = (backendVideos || [])
     .map(bv => {
-      // Infer difficulty based on views, title, duration keywords
-      let inferredDiff = 'intermediate';
+      // Adaptive level inference for universal spectrum
+      let inferredDiff = 'ug';
       const titleLower = (bv.title || '').toLowerCase();
-      if (titleLower.includes('intro') || titleLower.includes('beginner') || titleLower.includes('basic') || titleLower.includes('for dummies')) {
-        inferredDiff = 'beginner';
-      } else if (titleLower.includes('deep dive') || titleLower.includes('advanced') || titleLower.includes('masterclass') || titleLower.includes('solving') || titleLower.includes('mit')) {
-        inferredDiff = 'advanced';
+      if (titleLower.includes('rhymes') || titleLower.includes('kids song') || titleLower.includes('phonics') || titleLower.includes('cocomelon') || titleLower.includes('cartoon')) {
+        inferredDiff = 'lkg';
+      } else if (titleLower.includes('nursery') || titleLower.includes('kindergarten') || titleLower.includes('preschool')) {
+        inferredDiff = 'ukg';
+      } else if (titleLower.includes('elementary') || titleLower.includes('grade 1') || titleLower.includes('grade 2') || titleLower.includes('grade 3')) {
+        inferredDiff = 'class_1_5';
+      } else if (titleLower.includes('class 6') || titleLower.includes('class 8') || titleLower.includes('middle school') || titleLower.includes('class 10')) {
+        inferredDiff = 'class_6_10';
+      } else if (titleLower.includes('class 12') || titleLower.includes('board preparation') || titleLower.includes('neet') || titleLower.includes('jee')) {
+        inferredDiff = 'class_11_12';
+      } else if (titleLower.includes('thesis') || titleLower.includes('dissertation') || titleLower.includes('defense') || titleLower.includes('literature review')) {
+        inferredDiff = 'phd';
+      } else if (titleLower.includes('masters') || titleLower.includes('advanced paper') || titleLower.includes('research paper')) {
+        inferredDiff = 'pg';
       }
       
       return {
@@ -988,11 +1089,23 @@ const Resources = () => {
       parts.push(domain);
     }
 
-    // Level matching
+    // Level matching for dynamic search modifier
     if (level) {
-      if (level === 'beginner') parts.push('introduction basic');
-      else if (level === 'intermediate') parts.push('concepts practice');
-      else if (level === 'advanced') parts.push('deep dive masterclass');
+      if (level === 'lkg' || level === 'ukg') {
+        parts.push('nursery rhymes songs kids animated cartoon fun phonics learn');
+      } else if (level === 'class_1_5') {
+        parts.push('for kids elementary primary school science lesson animation');
+      } else if (level === 'class_6_10') {
+        parts.push('middle school high school grade syllabus cbse tutor');
+      } else if (level === 'class_11_12') {
+        parts.push('class 11 class 12 board exam preparation crash course AP');
+      } else if (level === 'ug') {
+        parts.push('university lecture undergraduate college course curriculum engineering');
+      } else if (level === 'pg') {
+        parts.push('postgraduate masters degree advanced paper study seminar');
+      } else if (level === 'phd') {
+        parts.push('phd research thesis academic paper methodology dissertation defense');
+      }
     }
 
     if (parts.length === 0) {
@@ -1063,12 +1176,23 @@ const Resources = () => {
 
             {/* Level Dropdown */}
             <div className="form-group res-field">
-              <label>Difficulty Level</label>
+              <label>Academic Grade / Level</label>
               <select value={level} onChange={(e) => setLevel(e.target.value)}>
                 <option value="">Any Level</option>
-                <option value="beginner">Beginner</option>
-                <option value="intermediate">Intermediate</option>
-                <option value="advanced">Advanced</option>
+                <optgroup label="Kindergarten / Pre-Primary">
+                  <option value="lkg">LKG (Lower Kindergarten)</option>
+                  <option value="ukg">UKG (Upper Kindergarten)</option>
+                </optgroup>
+                <optgroup label="School Education">
+                  <option value="class_1_5">Class 1 to 5 (Primary)</option>
+                  <option value="class_6_10">Class 6 to 10 (Secondary)</option>
+                  <option value="class_11_12">Class 11 & 12 (Higher Secondary)</option>
+                </optgroup>
+                <optgroup label="Higher Education">
+                  <option value="ug">Undergraduate (UG / Bachelors)</option>
+                  <option value="pg">Postgraduate (PG / Masters)</option>
+                  <option value="phd">Doctorate (PhD / Research)</option>
+                </optgroup>
               </select>
             </div>
 
