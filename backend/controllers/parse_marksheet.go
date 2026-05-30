@@ -28,12 +28,7 @@ type geminiContent struct {
 }
 
 type geminiRequest struct {
-	Contents         []geminiContent   `json:"contents"`
-	GenerationConfig *geminiGenConfig  `json:"generationConfig,omitempty"`
-}
-
-type geminiGenConfig struct {
-	ResponseMimeType string `json:"responseMimeType,omitempty"`
+	Contents []geminiContent `json:"contents"`
 }
 
 type geminiResponse struct {

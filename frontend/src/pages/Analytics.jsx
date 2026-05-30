@@ -264,73 +264,7 @@ const parseLocalPDF = async (file) => {
   return parsed;
 };
 
-const fileToBase64 = (file) => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => {
-      const base64String = reader.result.split(',')[1];
-      resolve(base64String);
-    };
-    reader.onerror = error => reject(error);
-  });
-};
 
-const parseWithGemini = async (file, apiKey) => {
-  const base64Data = await fileToBase64(file);
-  const mimeType = file.type || 'application/octet-stream';
-  
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      contents: [
-        {
-          parts: [
-            {
-              text: "Extract all exam grades and marksheet records from this file. Return ONLY a valid JSON array of objects, with keys: \"subject\", \"examName\", \"score\", \"maxScore\". Ensure \"score\" and \"maxScore\" are numbers (floats). Do not include any markdown wrap or explanation, just the raw JSON array. Example: [{\"subject\": \"Mathematics\", \"examName\": \"Midterm\", \"score\": 85.5, \"maxScore\": 100}]"
-            },
-            {
-              inlineData: {
-                mimeType,
-                data: base64Data
-              }
-            }
-          ]
-        }
-      ],
-      generationConfig: {
-        responseMimeType: "application/json"
-      }
-    })
-  });
-  
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error?.message || 'Failed to call Gemini AI API.');
-  }
-  
-  const result = await response.json();
-  const textResponse = result.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!textResponse) throw new Error('No content returned from Gemini.');
-  
-  let cleanedJsonText = textResponse.trim();
-  if (cleanedJsonText.startsWith('```')) {
-    cleanedJsonText = cleanedJsonText.replace(/^```(?:json)?/, '').replace(/```$/, '').trim();
-  }
-  
-  const data = JSON.parse(cleanedJsonText);
-  if (!Array.isArray(data)) throw new Error('AI did not return a list of grades.');
-  
-  return data.map(item => ({
-    subject: String(item.subject || 'General').substring(0, 50),
-    examName: String(item.examName || 'Assessment').substring(0, 50),
-    score: parseFloat(item.score) || 0,
-    maxScore: parseFloat(item.maxScore) || 100
-  }));
-};
 
 const Analytics = () => {
   const { user } = useAuth();
