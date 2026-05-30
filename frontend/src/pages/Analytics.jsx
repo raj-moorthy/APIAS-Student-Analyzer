@@ -426,7 +426,7 @@ const Analytics = () => {
     }
   };
 
-  /* ── parse & preview marksheet (local parsers only — no API key needed) ── */
+  /* ── parse marksheet via backend AI (Gemini, binary-safe) ── */
   const handleMarksheetUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -435,31 +435,32 @@ const Analytics = () => {
     setParsedPreview([]);
 
     try {
-      let results = [];
-      const name = file.name.toLowerCase();
+      const token = localStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('file', file);
 
-      if (name.endsWith('.csv') || name.endsWith('.txt')) {
-        // Plain text — safe to read as text
-        const text = await file.text();
-        results = parseLocalCSV(text);
-      } else if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
-        // Binary Excel — parsed via SheetJS (CDN, binary-safe)
-        results = await parseLocalExcel(file);
-      } else if (name.endsWith('.pdf')) {
-        // Binary PDF — parsed via PDF.js (CDN, binary-safe)
-        results = await parseLocalPDF(file);
-      } else {
-        throw new Error('Unsupported format. Please upload a CSV, TXT, Excel (.xlsx/.xls), or PDF file.');
+      const res = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'}/analytics/parse-marksheet`,
+        {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          // Do NOT set Content-Type — browser sets it with boundary automatically
+          body: formData,
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || `Server error ${res.status}`);
       }
 
-      if (!results || results.length === 0) {
-        throw new Error(
-          'No grades could be extracted. Make sure the file has columns: Subject, Exam Name, Score, Max Score.'
-        );
+      if (!Array.isArray(data) || data.length === 0) {
+        throw new Error('No grades found in the file. Try a different marksheet format.');
       }
 
-      setParsedPreview(results);
-      setSheetMsg(`📊 ${results.length} grade(s) found — review and confirm below.`);
+      setParsedPreview(data);
+      setSheetMsg(`✨ AI extracted ${data.length} grade(s) — review and confirm below.`);
     } catch (err) {
       setSheetMsg(`❌ ${err.message}`);
     } finally {
@@ -571,15 +572,16 @@ const Analytics = () => {
       {/* ── Marksheet Upload Panel ── */}
       <div className="marksheet-upload-panel glassmorphism">
         <div className="marksheet-upload-info">
-          <span className="marksheet-icon">📄</span>
+          <span className="marksheet-icon">🧠</span>
           <div>
-            <h3>Upload Marksheet</h3>
-            <p>Supports CSV, Excel (.xlsx / .xls), PDF, and plain text files. Grades are extracted automatically.</p>
+            <h3>AI Marksheet Parser</h3>
+            <p>Upload any marksheet — Google Gemini AI extracts all grades accurately from any format.</p>
             <div className="format-badges">
               <span className="format-badge csv">.CSV</span>
               <span className="format-badge excel">.XLSX / .XLS</span>
               <span className="format-badge pdf">.PDF</span>
               <span className="format-badge text">.TXT</span>
+              <span className="format-badge image">.PNG / .JPG</span>
             </div>
           </div>
         </div>
@@ -587,14 +589,14 @@ const Analytics = () => {
         <div className="marksheet-upload-action">
           {sheetMsg && <span className="sheet-success-msg">{sheetMsg}</span>}
           <label className="marksheet-upload-btn" htmlFor="marksheetInput">
-            {sheetUploading ? '⏳ Parsing...' : '📂 Upload Files'}
+            {sheetUploading ? '⏳ AI Parsing...' : '✨ Upload & Parse'}
           </label>
           <input
             id="marksheetInput" type="file"
             style={{ display: 'none' }}
             onChange={handleMarksheetUpload}
             disabled={sheetUploading}
-            accept=".csv,.txt,.xlsx,.xls,.pdf"
+            accept=".csv,.txt,.xlsx,.xls,.pdf,.png,.jpg,.jpeg,.webp"
           />
         </div>
       </div>

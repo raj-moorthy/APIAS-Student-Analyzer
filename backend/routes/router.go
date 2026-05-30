@@ -52,6 +52,7 @@ func SetupRouter(cfg *config.Config) *mux.Router {
 	protectedRouter.HandleFunc("/analytics/marks", controllers.GetMarks).Methods("GET")
 	protectedRouter.HandleFunc("/analytics/marks", controllers.CreateMark).Methods("POST")
 	protectedRouter.HandleFunc("/analytics/marks/{id}", controllers.DeleteMark).Methods("DELETE")
+	protectedRouter.HandleFunc("/analytics/parse-marksheet", controllers.ParseMarksheet).Methods("POST")
 
 	// Resources routes
 	protectedRouter.HandleFunc("/resources/search", controllers.SearchYoutubeResources).Methods("GET")
