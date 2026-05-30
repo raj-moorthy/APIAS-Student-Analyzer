@@ -31,7 +31,8 @@ const BLOG_ARTICLES_POOL = [
     emoji: '📅',
     subjects: ['all'],
     domains: ['Tutorial', 'Exam Preparation'],
-    isMedium: true
+    isMedium: true,
+    difficulty: 'beginner'
   },
   {
     id: 'b2',
@@ -45,7 +46,8 @@ const BLOG_ARTICLES_POOL = [
     emoji: '🧠',
     subjects: ['all'],
     domains: ['Tutorial', 'Crash Course'],
-    isMedium: true
+    isMedium: true,
+    difficulty: 'beginner'
   },
   // Computer Science & Software
   {
@@ -60,7 +62,8 @@ const BLOG_ARTICLES_POOL = [
     emoji: '🔬',
     subjects: ['Computer Science'],
     domains: ['Full Course Lecture', 'Problem Solving'],
-    isResearchPaper: true
+    isResearchPaper: true,
+    difficulty: 'advanced'
   },
   {
     id: 'cs_med1',
@@ -74,7 +77,8 @@ const BLOG_ARTICLES_POOL = [
     emoji: '🌐',
     subjects: ['Computer Science', 'Web Development'],
     domains: ['Tutorial', 'Problem Solving', 'Exam Preparation'],
-    isMedium: true
+    isMedium: true,
+    difficulty: 'intermediate'
   },
   // Web Development
   {
@@ -89,7 +93,8 @@ const BLOG_ARTICLES_POOL = [
     emoji: '🔬',
     subjects: ['Web Development', 'Computer Science'],
     domains: ['Full Course Lecture', 'Problem Solving'],
-    isResearchPaper: true
+    isResearchPaper: true,
+    difficulty: 'advanced'
   },
   {
     id: 'web_med1',
@@ -103,7 +108,8 @@ const BLOG_ARTICLES_POOL = [
     emoji: '🌐',
     subjects: ['Web Development'],
     domains: ['Tutorial', 'Lab / Practical'],
-    isMedium: true
+    isMedium: true,
+    difficulty: 'intermediate'
   },
   // Machine Learning
   {
@@ -118,7 +124,8 @@ const BLOG_ARTICLES_POOL = [
     emoji: '🔬',
     subjects: ['Machine Learning', 'Data Science', 'Computer Science'],
     domains: ['Full Course Lecture', 'Problem Solving'],
-    isResearchPaper: true
+    isResearchPaper: true,
+    difficulty: 'advanced'
   },
   {
     id: 'ml_med1',
@@ -132,7 +139,8 @@ const BLOG_ARTICLES_POOL = [
     emoji: '🌐',
     subjects: ['Machine Learning', 'Data Science'],
     domains: ['Tutorial', 'Crash Course', 'Problem Solving'],
-    isMedium: true
+    isMedium: true,
+    difficulty: 'intermediate'
   },
   // Mathematics
   {
@@ -147,7 +155,8 @@ const BLOG_ARTICLES_POOL = [
     emoji: '🔬',
     subjects: ['Mathematics', 'Computer Science'],
     domains: ['Full Course Lecture', 'Problem Solving'],
-    isResearchPaper: true
+    isResearchPaper: true,
+    difficulty: 'advanced'
   },
   {
     id: 'math_med1',
@@ -161,7 +170,8 @@ const BLOG_ARTICLES_POOL = [
     emoji: '🌐',
     subjects: ['Mathematics', 'Data Science', 'Machine Learning'],
     domains: ['Tutorial', 'Crash Course'],
-    isMedium: true
+    isMedium: true,
+    difficulty: 'intermediate'
   },
   // Physics
   {
@@ -176,7 +186,8 @@ const BLOG_ARTICLES_POOL = [
     emoji: '🔬',
     subjects: ['Physics'],
     domains: ['Full Course Lecture', 'Problem Solving'],
-    isResearchPaper: true
+    isResearchPaper: true,
+    difficulty: 'advanced'
   },
   {
     id: 'phys_med1',
@@ -190,7 +201,8 @@ const BLOG_ARTICLES_POOL = [
     emoji: '🌐',
     subjects: ['Physics', 'Electrical Engineering'],
     domains: ['Tutorial', 'Crash Course'],
-    isMedium: true
+    isMedium: true,
+    difficulty: 'intermediate'
   },
   // Biology
   {
@@ -205,7 +217,8 @@ const BLOG_ARTICLES_POOL = [
     emoji: '🔬',
     subjects: ['Biology', 'Chemistry'],
     domains: ['Full Course Lecture', 'Lab / Practical'],
-    isResearchPaper: true
+    isResearchPaper: true,
+    difficulty: 'advanced'
   },
   // Economics
   {
@@ -220,7 +233,8 @@ const BLOG_ARTICLES_POOL = [
     emoji: '🔬',
     subjects: ['Economics'],
     domains: ['Full Course Lecture', 'Problem Solving'],
-    isResearchPaper: true
+    isResearchPaper: true,
+    difficulty: 'advanced'
   }
 ];
 
@@ -237,11 +251,28 @@ const getRecommendedBlogs = (selectedSubject, selectedDomain, selectedLevel) => 
       blog.domains.includes('all') ||
       blog.domains.some(d => d.toLowerCase() === selectedDomain.toLowerCase());
 
-    return matchesSubject && matchesDomain;
+    // 3. Difficulty Level filter
+    const matchesLevel = !selectedLevel || 
+      blog.difficulty === selectedLevel;
+
+    return matchesSubject && matchesDomain && matchesLevel;
   });
 
   if (filtered.length > 0) return filtered;
-  // Fallback to general study skills that match domain or are general
+  
+  // Fallback to ignoring level if no strict match
+  const subDomainFiltered = BLOG_ARTICLES_POOL.filter(blog => {
+    const matchesSubject = !selectedSubject || 
+      selectedSubject === 'Custom' ||
+      blog.subjects.includes('all') || 
+      blog.subjects.some(s => s.toLowerCase() === selectedSubject.toLowerCase());
+    const matchesDomain = !selectedDomain || 
+      blog.domains.includes('all') ||
+      blog.domains.some(d => d.toLowerCase() === selectedDomain.toLowerCase());
+    return matchesSubject && matchesDomain;
+  });
+  if (subDomainFiltered.length > 0) return subDomainFiltered;
+
   return BLOG_ARTICLES_POOL.filter(b => b.subjects.includes('all'));
 };
 
@@ -256,7 +287,8 @@ const VIDEO_RESOURCES_POOL = [
     thumbnail: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=360&q=80',
     url: 'https://www.youtube.com/watch?v=O5nskjZ_GoI',
     subject: 'Computer Science',
-    domain: 'Crash Course'
+    domain: 'Crash Course',
+    difficulty: 'beginner'
   },
   {
     id: 'CS_LEC_1',
@@ -267,7 +299,8 @@ const VIDEO_RESOURCES_POOL = [
     thumbnail: 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=360&q=80',
     url: 'https://www.youtube.com/watch?v=kQt2LnduKug',
     subject: 'Computer Science',
-    domain: 'Full Course Lecture'
+    domain: 'Full Course Lecture',
+    difficulty: 'advanced'
   },
   {
     id: 'WEB_TUT_1',
@@ -278,7 +311,8 @@ const VIDEO_RESOURCES_POOL = [
     thumbnail: 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=360&q=80',
     url: 'https://www.youtube.com/watch?v=G3e-cpL7ofc',
     subject: 'Web Development',
-    domain: 'Tutorial'
+    domain: 'Tutorial',
+    difficulty: 'beginner'
   },
   {
     id: 'WEB_CRASH_1',
@@ -289,7 +323,8 @@ const VIDEO_RESOURCES_POOL = [
     thumbnail: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=360&q=80',
     url: 'https://www.youtube.com/watch?v=w7ejDZ8SWv8',
     subject: 'Web Development',
-    domain: 'Crash Course'
+    domain: 'Crash Course',
+    difficulty: 'intermediate'
   },
   {
     id: 'ML_TUT_1',
@@ -300,7 +335,8 @@ const VIDEO_RESOURCES_POOL = [
     thumbnail: 'https://images.unsplash.com/photo-1527474305487-b87b222841cc?w=360&q=80',
     url: 'https://www.youtube.com/watch?v=GwIo3gTOB3I',
     subject: 'Machine Learning',
-    domain: 'Tutorial'
+    domain: 'Tutorial',
+    difficulty: 'beginner'
   },
   {
     id: 'ML_LEC_1',
@@ -311,7 +347,8 @@ const VIDEO_RESOURCES_POOL = [
     thumbnail: 'https://images.unsplash.com/photo-1501504905252-473c47e087f8?w=360&q=80',
     url: 'https://www.youtube.com/watch?v=jGwO_b-YFfk',
     subject: 'Machine Learning',
-    domain: 'Full Course Lecture'
+    domain: 'Full Course Lecture',
+    difficulty: 'advanced'
   },
   // Mathematics
   {
@@ -323,7 +360,8 @@ const VIDEO_RESOURCES_POOL = [
     thumbnail: 'https://images.unsplash.com/photo-1509228468518-180dd4864904?w=360&q=80',
     url: 'https://www.youtube.com/watch?v=OmJ-4B-mS-Y',
     subject: 'Mathematics',
-    domain: 'Tutorial'
+    domain: 'Tutorial',
+    difficulty: 'beginner'
   },
   {
     id: 'MATH_CRASH_1',
@@ -334,7 +372,8 @@ const VIDEO_RESOURCES_POOL = [
     thumbnail: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=360&q=80',
     url: 'https://www.youtube.com/watch?v=fYyAMM7KAdY',
     subject: 'Mathematics',
-    domain: 'Crash Course'
+    domain: 'Crash Course',
+    difficulty: 'intermediate'
   },
   {
     id: 'MATH_SOLVE_1',
@@ -345,7 +384,8 @@ const VIDEO_RESOURCES_POOL = [
     thumbnail: 'https://images.unsplash.com/photo-1453733190148-c44698c26588?w=360&q=80',
     url: 'https://www.youtube.com/watch?v=83B6fHn2_iE',
     subject: 'Mathematics',
-    domain: 'Problem Solving'
+    domain: 'Problem Solving',
+    difficulty: 'advanced'
   },
   // Physics
   {
@@ -357,7 +397,8 @@ const VIDEO_RESOURCES_POOL = [
     thumbnail: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=360&q=80',
     url: 'https://www.youtube.com/watch?v=ZihywtixUYo',
     subject: 'Physics',
-    domain: 'Tutorial'
+    domain: 'Tutorial',
+    difficulty: 'beginner'
   },
   {
     id: 'PHYS_CRASH_1',
@@ -368,7 +409,8 @@ const VIDEO_RESOURCES_POOL = [
     thumbnail: 'https://images.unsplash.com/photo-1507668077129-56e32842fceb?w=360&q=80',
     url: 'https://www.youtube.com/watch?v=1tJk905s61k',
     subject: 'Physics',
-    domain: 'Exam Preparation'
+    domain: 'Exam Preparation',
+    difficulty: 'intermediate'
   },
   // Chemistry
   {
@@ -380,7 +422,8 @@ const VIDEO_RESOURCES_POOL = [
     thumbnail: 'https://images.unsplash.com/photo-1532187863486-abf9d39d66e8?w=360&q=80',
     url: 'https://www.youtube.com/watch?v=mDae28Q1K9k',
     subject: 'Chemistry',
-    domain: 'Tutorial'
+    domain: 'Tutorial',
+    difficulty: 'beginner'
   },
   {
     id: 'CHEM_CRASH_1',
@@ -391,7 +434,8 @@ const VIDEO_RESOURCES_POOL = [
     thumbnail: 'https://images.unsplash.com/photo-1603126857599-f6e157fa2fe6?w=360&q=80',
     url: 'https://www.youtube.com/watch?v=U3yG7c9iW0M',
     subject: 'Chemistry',
-    domain: 'Crash Course'
+    domain: 'Crash Course',
+    difficulty: 'intermediate'
   },
   // Biology
   {
@@ -403,7 +447,8 @@ const VIDEO_RESOURCES_POOL = [
     thumbnail: 'https://images.unsplash.com/photo-1530026405186-ed1ea0ac7a63?w=360&q=80',
     url: 'https://www.youtube.com/watch?v=8IlzKri08kk',
     subject: 'Biology',
-    domain: 'Tutorial'
+    domain: 'Tutorial',
+    difficulty: 'beginner'
   },
   // Economics
   {
@@ -415,7 +460,8 @@ const VIDEO_RESOURCES_POOL = [
     thumbnail: 'https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?w=360&q=80',
     url: 'https://www.youtube.com/watch?v=2YULdjmUtS8',
     subject: 'Economics',
-    domain: 'Crash Course'
+    domain: 'Crash Course',
+    difficulty: 'intermediate'
   }
 ];
 
@@ -436,26 +482,40 @@ const SUBJECT_KEYWORDS = {
   'electrical engineering': ['electrical', 'circuit', 'resistor', 'voltage', 'op-amp', 'ee', 'current', 'diode', 'transistor', 'signal', 'multisim', 'arduino']
 };
 
-const getRecommendedVideos = (selectedSubject, selectedDomain, backendVideos) => {
+const getRecommendedVideos = (selectedSubject, selectedDomain, selectedLevel, backendVideos) => {
   const localMatches = VIDEO_RESOURCES_POOL.filter(vid => {
     const matchesSubject = !selectedSubject || 
       selectedSubject === 'Custom' ||
       vid.subject.toLowerCase() === selectedSubject.toLowerCase();
     const matchesDomain = !selectedDomain || 
       vid.domain.toLowerCase() === selectedDomain.toLowerCase();
-    return matchesSubject && matchesDomain;
+    const matchesLevel = !selectedLevel || 
+      vid.difficulty === selectedLevel;
+    return matchesSubject && matchesDomain && matchesLevel;
   });
 
   const matchedBackend = (backendVideos || [])
-    .map(bv => ({
-      id: bv.id,
-      title: bv.title || '',
-      channel: bv.channel || 'Educational Resource',
-      views: bv.views || '100K+ views',
-      duration: bv.duration || '10:00',
-      thumbnail: bv.thumbnail || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=360&q=80',
-      url: bv.url || (bv.id ? `https://www.youtube.com/watch?v=${bv.id}` : '#')
-    }))
+    .map(bv => {
+      // Infer difficulty based on views, title, duration keywords
+      let inferredDiff = 'intermediate';
+      const titleLower = (bv.title || '').toLowerCase();
+      if (titleLower.includes('intro') || titleLower.includes('beginner') || titleLower.includes('basic') || titleLower.includes('for dummies')) {
+        inferredDiff = 'beginner';
+      } else if (titleLower.includes('deep dive') || titleLower.includes('advanced') || titleLower.includes('masterclass') || titleLower.includes('solving') || titleLower.includes('mit')) {
+        inferredDiff = 'advanced';
+      }
+      
+      return {
+        id: bv.id,
+        title: bv.title || '',
+        channel: bv.channel || 'Educational Resource',
+        views: bv.views || '100K+ views',
+        duration: bv.duration || '10:00',
+        thumbnail: bv.thumbnail || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=360&q=80',
+        url: bv.url || (bv.id ? `https://www.youtube.com/watch?v=${bv.id}` : '#'),
+        difficulty: inferredDiff
+      };
+    })
     .filter(bv => {
       // 1. Ensure the video title matches the chosen subject keywords!
       if (selectedSubject && selectedSubject !== 'Custom') {
@@ -466,7 +526,11 @@ const getRecommendedVideos = (selectedSubject, selectedDomain, backendVideos) =>
           if (!hasKeyword) return false;
         }
       }
-      // 2. Filter out broken/placeholder dynamic titles
+      // 2. Level filter for backend videos
+      if (selectedLevel && bv.difficulty !== selectedLevel) {
+        return false;
+      }
+      // 3. Filter out broken/placeholder dynamic titles
       if (!bv.title || bv.title.includes('undefined') || bv.title.toLowerCase().includes('failed to')) {
         return false;
       }
@@ -476,6 +540,18 @@ const getRecommendedVideos = (selectedSubject, selectedDomain, backendVideos) =>
   const combined = [...localMatches, ...matchedBackend.filter(bv => !localMatches.some(lm => lm.title.toLowerCase() === bv.title.toLowerCase()))];
   
   if (combined.length > 0) return combined;
+
+  // Fallback ignoring level
+  const localFallback = VIDEO_RESOURCES_POOL.filter(vid => {
+    const matchesSubject = !selectedSubject || 
+      selectedSubject === 'Custom' ||
+      vid.subject.toLowerCase() === selectedSubject.toLowerCase();
+    const matchesDomain = !selectedDomain || 
+      vid.domain.toLowerCase() === selectedDomain.toLowerCase();
+    return matchesSubject && matchesDomain;
+  });
+  if (localFallback.length > 0) return localFallback.slice(0, 4);
+
   return VIDEO_RESOURCES_POOL.slice(0, 4);
 };
 
@@ -592,7 +668,7 @@ const getSafeRedirectUrl = (url, fallbackTitle) => {
 };
 
 // ─── Received Resources Panel ───────────────────────────────────────────────
-const ReceivedPanel = () => {
+const ReceivedPanel = ({ refreshTrigger }) => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -614,7 +690,7 @@ const ReceivedPanel = () => {
       }
     };
     load();
-  }, []);
+  }, [refreshTrigger]);
 
   if (loading) return <div className="res-loader"><div className="res-loader-spinner" /><span>Loading shared resources…</span></div>;
   if (items.length === 0) return (
@@ -655,6 +731,171 @@ const ReceivedPanel = () => {
   );
 };
 
+// ─── Sent Resources Panel ─────────────────────────────────────────────────
+const SentPanel = ({ refreshTrigger }) => {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_BASE}/collaborate/sent`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setItems(data || []);
+        }
+      } catch {
+        setItems([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [refreshTrigger]);
+
+  if (loading) return <div className="res-loader"><div className="res-loader-spinner" /><span>Loading sent resources…</span></div>;
+  if (items.length === 0) return (
+    <div className="res-empty">
+      <div className="res-empty-icon">📤</div>
+      <h3>No shared resources sent yet</h3>
+      <p>Resources you share with classmates will show up here.</p>
+    </div>
+  );
+
+  return (
+    <div className="received-grid">
+      {items.map((item, i) => {
+        const isYT = isYouTubeUrl(item.resource_url);
+        return (
+          <div key={i} className="received-card glassmorphism">
+            <div className="received-card-header">
+              <span className="received-icon">{isYT ? '📺' : '📚'}</span>
+              <div>
+                <h4>{item.resource_title || 'Study Resource'}</h4>
+                <span className="received-from">To: {item.to_email}</span>
+              </div>
+            </div>
+            {item.note && <p className="received-note">"{item.note}"</p>}
+            <a
+              href={item.resource_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={isYT ? "btn-primary res-watch-btn" : "btn-secondary res-watch-btn"}
+              style={{ marginTop: '12px', display: 'inline-block' }}
+            >
+              {isYT ? '▶ Watch on YouTube' : '📖 Open Reference'}
+            </a>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+// ─── Direct Share Form Component ──────────────────────────────────────────
+const DirectShareForm = ({ user, onShareSuccess }) => {
+  const [toEmail, setToEmail] = useState('');
+  const [title, setTitle] = useState('');
+  const [url, setUrl] = useState('');
+  const [note, setNote] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState('');
+
+  const handleSend = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setStatus('');
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE}/collaborate/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          fromEmail: user?.email || '',
+          toEmail,
+          resourceTitle: title,
+          resourceURL: url,
+          note,
+          senderName: user?.firstName || user?.username || 'A classmate',
+        }),
+      });
+      if (!res.ok) throw new Error('Failed to send');
+      setStatus('✅ Resource shared successfully!');
+      setToEmail('');
+      setTitle('');
+      setUrl('');
+      setNote('');
+      if (onShareSuccess) onShareSuccess();
+    } catch {
+      setStatus('❌ Failed to share. Check recipient email.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="direct-share-card glassmorphism" style={{ maxWidth: '550px', margin: '0 auto', padding: '28px', borderRadius: '16px' }}>
+      <div className="modal-header" style={{ padding: '0 0 16px', borderBottom: '1px solid var(--border-color)', marginBottom: '20px' }}>
+        <span className="modal-icon">🤝</span>
+        <h3 style={{ fontSize: '1.4rem', fontWeight: '700', color: 'var(--text-color)', margin: '0 0 4px' }}>Share with a Classmate</h3>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>Send any video, website, or reference link to a classmate's email instantly.</p>
+      </div>
+      {status && <div className={`alert ${status.startsWith('✅') ? 'alert-success' : 'alert-error'}`} style={{ marginBottom: '16px' }}>{status}</div>}
+      <form onSubmit={handleSend} className="auth-form" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <label style={{ fontSize: '0.9rem', fontWeight: '500' }}>Recipient Email</label>
+          <input
+            type="email"
+            value={toEmail}
+            onChange={e => setToEmail(e.target.value)}
+            placeholder="classmate@university.edu"
+            required
+            style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(255,255,255,0.05)', color: 'var(--text-color)' }}
+          />
+        </div>
+        <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <label style={{ fontSize: '0.9rem', fontWeight: '500' }}>Resource Title</label>
+          <input
+            type="text"
+            value={title}
+            onChange={e => setTitle(e.target.value)}
+            placeholder="e.g. Feynman Technique Guide"
+            required
+            style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(255,255,255,0.05)', color: 'var(--text-color)' }}
+          />
+        </div>
+        <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <label style={{ fontSize: '0.9rem', fontWeight: '500' }}>Resource URL / Link</label>
+          <input
+            type="text"
+            value={url}
+            onChange={e => setUrl(e.target.value)}
+            placeholder="https://example.com/study-material"
+            required
+            style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(255,255,255,0.05)', color: 'var(--text-color)' }}
+          />
+        </div>
+        <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <label style={{ fontSize: '0.9rem', fontWeight: '500' }}>Personal Note (optional)</label>
+          <textarea
+            value={note}
+            onChange={e => setNote(e.target.value)}
+            placeholder="Hope this helps you with this week's assignments!"
+            rows={3}
+            style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(255,255,255,0.05)', color: 'var(--text-color)', resize: 'vertical' }}
+          />
+        </div>
+        <button type="submit" className="btn-primary auth-btn" disabled={loading} style={{ width: '100%', padding: '12px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', border: 'none', background: 'linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%)', color: '#fff' }}>
+          {loading ? 'Sharing…' : '📤 Send Resource'}
+        </button>
+      </form>
+    </div>
+  );
+};
+
 // ─── Main Resources Component ───────────────────────────────────────────────
 const Resources = () => {
   const { user } = useAuth();
@@ -668,6 +909,37 @@ const Resources = () => {
   const [error, setError]         = useState('');
   const [activeTab, setActiveTab] = useState('videos'); // 'videos' | 'blogs' | 'shared'
   const [shareModal, setShareModal] = useState(null); // resource object
+
+  const [collabSubTab, setCollabSubTab] = useState('received'); // 'received' | 'sent' | 'share'
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [receivedCount, setReceivedCount] = useState(0);
+  const [sentCount, setSentCount] = useState(0);
+
+  /* ── Fetch sent/received resource counts dynamically ── */
+  useEffect(() => {
+    if (activeTab === 'shared') {
+      const fetchCounts = async () => {
+        try {
+          const token = localStorage.getItem('token');
+          const [resRec, resSent] = await Promise.all([
+            fetch(`${API_BASE}/collaborate/received`, { headers: { Authorization: `Bearer ${token}` } }),
+            fetch(`${API_BASE}/collaborate/sent`, { headers: { Authorization: `Bearer ${token}` } })
+          ]);
+          if (resRec.ok) {
+            const d = await resRec.json();
+            setReceivedCount(d.length || 0);
+          }
+          if (resSent.ok) {
+            const d = await resSent.json();
+            setSentCount(d.length || 0);
+          }
+        } catch (e) {
+          console.error("Failed to load collaboration counts", e);
+        }
+      };
+      fetchCounts();
+    }
+  }, [activeTab, refreshTrigger]);
 
   /* ── fetch from backend ── */
   const fetchVideos = useCallback(async (query) => {
@@ -839,7 +1111,7 @@ const Resources = () => {
 
       {/* ── Videos Tab ── */}
       {activeTab === 'videos' && (() => {
-        const displayedVideos = getRecommendedVideos(subject, domain, youtubeVideos);
+        const displayedVideos = getRecommendedVideos(subject, domain, level, youtubeVideos);
         return (
           <>
             {error && <div className="alert alert-error">{error}</div>}
@@ -959,11 +1231,47 @@ const Resources = () => {
       {/* ── Shared Resources Tab ── */}
       {activeTab === 'shared' && (
         <div className="shared-section">
-          <div className="res-results-header">
-            <h3>🤝 Resources Shared by Classmates</h3>
-            <span className="res-results-tag">From your collaborators</span>
+          <div className="res-results-header" style={{ marginBottom: '16px' }}>
+            <h3>🤝 Classmate Collaboration Desk</h3>
+            <span className="res-results-tag">Share knowledge with your peers</span>
           </div>
-          <ReceivedPanel />
+
+          {/* Sub Tab Navigation */}
+          <div className="sub-tab-nav" style={{ display: 'flex', gap: '12px', marginBottom: '24px', justifyContent: 'center' }}>
+            <button
+              className={`tag-btn ${collabSubTab === 'received' ? 'active' : ''}`}
+              onClick={() => setCollabSubTab('received')}
+              style={collabSubTab === 'received' ? { background: 'var(--primary-color)', color: '#fff', boxShadow: 'var(--premium-glow)' } : {}}
+            >
+              📥 Received ({receivedCount})
+            </button>
+            <button
+              className={`tag-btn ${collabSubTab === 'sent' ? 'active' : ''}`}
+              onClick={() => setCollabSubTab('sent')}
+              style={collabSubTab === 'sent' ? { background: 'var(--primary-color)', color: '#fff', boxShadow: 'var(--premium-glow)' } : {}}
+            >
+              📤 Sent ({sentCount})
+            </button>
+            <button
+              className={`tag-btn ${collabSubTab === 'share' ? 'active' : ''}`}
+              onClick={() => setCollabSubTab('share')}
+              style={collabSubTab === 'share' ? { background: 'var(--primary-color)', color: '#fff', boxShadow: 'var(--premium-glow)' } : {}}
+            >
+              ＋ Share New Link
+            </button>
+          </div>
+
+          {collabSubTab === 'received' && <ReceivedPanel refreshTrigger={refreshTrigger} />}
+          {collabSubTab === 'sent' && <SentPanel refreshTrigger={refreshTrigger} />}
+          {collabSubTab === 'share' && (
+            <DirectShareForm
+              user={user}
+              onShareSuccess={() => {
+                setRefreshTrigger(prev => prev + 1);
+                setCollabSubTab('sent'); // redirect to sent panel automatically!
+              }}
+            />
+          )}
         </div>
       )}
     </div>

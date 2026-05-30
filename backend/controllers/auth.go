@@ -81,19 +81,19 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user := models.User{
-		ID:               primitive.NewObjectID(),
-		Username:         input.Username,
-		Email:            input.Email,
-		Password:         string(hashedPassword),
-		FirstName:        input.FirstName,
-		LastName:         input.LastName,
-		Role:             input.Role,
-		Semester:         input.Semester,
-		Major:            input.Major,
-		CreatedAt:        time.Now(),
-		UpdatedAt:        time.Now(),
-		IsActive:         true,
-		IsEmailVerified:  true,
+		ID:              primitive.NewObjectID(),
+		Username:        input.Username,
+		Email:           input.Email,
+		Password:        string(hashedPassword),
+		FirstName:       input.FirstName,
+		LastName:        input.LastName,
+		Role:            input.Role,
+		Semester:        input.Semester,
+		Major:           input.Major,
+		CreatedAt:       time.Now(),
+		UpdatedAt:       time.Now(),
+		IsActive:        true,
+		IsEmailVerified: true,
 		Preferences: models.Preferences{
 			Theme:          "light",
 			Notifications:  true,
@@ -124,18 +124,18 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"user": map[string]interface{}{
-			"id":             user.ID.Hex(),
-			"username":       user.Username,
-			"email":          user.Email,
-			"firstName":      user.FirstName,
-			"lastName":       user.LastName,
-			"role":           user.Role,
-			"semester":       user.Semester,
-			"major":          user.Major,
-			"createdAt":      user.CreatedAt,
-			"isActive":       user.IsActive,
+			"id":              user.ID.Hex(),
+			"username":        user.Username,
+			"email":           user.Email,
+			"firstName":       user.FirstName,
+			"lastName":        user.LastName,
+			"role":            user.Role,
+			"semester":        user.Semester,
+			"major":           user.Major,
+			"createdAt":       user.CreatedAt,
+			"isActive":        user.IsActive,
 			"isEmailVerified": true,
-			"preferences":    user.Preferences,
+			"preferences":     user.Preferences,
 		},
 		"token": tokenString,
 	})
@@ -353,12 +353,12 @@ func ResetPassword(w http.ResponseWriter, r *http.Request) {
 // Sends a study resource (title, url, note) to a peer by email.
 func CollaborateSendResource(w http.ResponseWriter, r *http.Request) {
 	var body struct {
-		FromEmail    string `json:"fromEmail"`
-		ToEmail      string `json:"toEmail"`
+		FromEmail     string `json:"fromEmail"`
+		ToEmail       string `json:"toEmail"`
 		ResourceTitle string `json:"resourceTitle"`
-		ResourceURL  string `json:"resourceURL"`
-		Note         string `json:"note"`
-		SenderName   string `json:"senderName"`
+		ResourceURL   string `json:"resourceURL"`
+		Note          string `json:"note"`
+		SenderName    string `json:"senderName"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.ToEmail == "" {
 		http.Error(w, "Invalid payload", http.StatusBadRequest)

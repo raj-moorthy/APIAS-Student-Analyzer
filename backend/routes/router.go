@@ -2,9 +2,9 @@ package routes
 
 import (
 	"github.com/gorilla/mux"
-	"github.com/thekripaverse/student-analyzer-backend/middleware"
-	"github.com/thekripaverse/student-analyzer-backend/controllers"
 	"github.com/thekripaverse/student-analyzer-backend/config"
+	"github.com/thekripaverse/student-analyzer-backend/controllers"
+	"github.com/thekripaverse/student-analyzer-backend/middleware"
 )
 
 // SetupRouter sets up and returns the main router with all routes
