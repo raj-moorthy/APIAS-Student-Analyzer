@@ -352,11 +352,6 @@ const Analytics = () => {
   const [sheetMsg, setSheetMsg]             = useState('');
 
   // New Marksheet Parsing States
-  const [parseMode, setParseMode]           = useState('local'); // 'local' | 'ai'
-  const [showKeyConfig, setShowKeyConfig]   = useState(false);
-  const [geminiKey, setGeminiKey]           = useState(() => {
-    return localStorage.getItem('apais_gemini_key') || import.meta.env.VITE_GEMINI_API_KEY || '';
-  });
   const [parsedPreview, setParsedPreview]   = useState([]); // List of grades to preview: [{ subject, examName, score, maxScore }]
   const [importingPreview, setImportingPreview] = useState(false);
 
@@ -439,26 +434,14 @@ const Analytics = () => {
     setSheetMsg('');
     setParsedPreview([]);
     
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    
     try {
-      let results = [];
-      if (parseMode === 'ai') {
-        if (!geminiKey) {
-          throw new Error('Google Gemini API Key is required for AI Smart Parsing. Please configure it below.');
-        }
-        results = await parseWithGemini(file, geminiKey);
-      } else {
-        const fileName = file.name.toLowerCase();
-        if (fileName.endsWith('.csv') || fileName.endsWith('.txt')) {
-          const text = await file.text();
-          results = parseLocalCSV(text);
-        } else if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
-          results = await parseLocalExcel(file);
-        } else if (fileName.endsWith('.pdf')) {
-          results = await parseLocalPDF(file);
-        } else {
-          throw new Error('Unsupported file format for local parsing. Use CSV, Excel (XLSX), or PDF. For images, please toggle "AI Smart Parse".');
-        }
+      if (!apiKey) {
+        throw new Error('Google Gemini API Key is missing. Please add VITE_GEMINI_API_KEY to your frontend/.env file.');
       }
+      
+      const results = await parseWithGemini(file, apiKey);
       
       if (!results || results.length === 0) {
         throw new Error('No grades or marksheet records could be parsed. Please check the file formatting.');
@@ -577,80 +560,49 @@ const Analytics = () => {
       {/* ── Marksheet Upload Panel ── */}
       <div className="marksheet-upload-panel glassmorphism">
         <div className="marksheet-upload-info">
-          <span className="marksheet-icon">📄</span>
-          <div>
-            <h3>Upload Academic Marksheet</h3>
-            <p>Select any CSV, TXT, Excel (XLSX), or PDF marksheet file to parse and bulk-load your grades.</p>
+          <span className="marksheet-icon">🧠</span>
+          <div style={{ flex: 1 }}>
+            <h3>AI-Powered Marksheet Upload</h3>
+            <p>Upload your marksheet in any format (CSV, Excel, PDF, or scanned Images). Google Gemini AI will intelligently parse all subject grades automatically!</p>
             <div className="format-badges">
               <span className="format-badge csv">.CSV</span>
               <span className="format-badge excel">.XLSX</span>
               <span className="format-badge pdf">.PDF</span>
               <span className="format-badge text">.TXT</span>
-              <span className="format-badge image">.PNG / .JPG (AI Only)</span>
+              <span className="format-badge image">.PNG / .JPG</span>
             </div>
+
+            {/* Instruction Warning if Gemini key is missing */}
+            {!import.meta.env.VITE_GEMINI_API_KEY && (
+              <div className="gemini-key-warning-card">
+                <span className="warning-icon">⚠️</span>
+                <div className="warning-content">
+                  <strong>Gemini AI API Key is not configured!</strong>
+                  <p>To enable smart marksheet uploads, follow these 2 simple steps:</p>
+                  <ol>
+                    <li>Get a free key from <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer">Google AI Studio</a>.</li>
+                    <li>Add <code>VITE_GEMINI_API_KEY=your_api_key_here</code> to your <code>frontend/.env</code> file and restart the dev server.</li>
+                  </ol>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="marksheet-controls-and-actions">
-          {/* Mode Selector */}
-          <div className="parser-mode-selector">
-            <button 
-              type="button" 
-              className={`mode-btn ${parseMode === 'local' ? 'active' : ''}`}
-              onClick={() => setParseMode('local')}
-            >
-              ⚡ Local Fast
-            </button>
-            <button 
-              type="button" 
-              className={`mode-btn ${parseMode === 'ai' ? 'active' : ''}`}
-              onClick={() => setParseMode('ai')}
-            >
-              🧠 AI Smart
-            </button>
-            
-            {parseMode === 'ai' && (
-              <button 
-                type="button" 
-                className={`key-config-btn ${geminiKey ? 'configured' : ''}`}
-                onClick={() => setShowKeyConfig(!showKeyConfig)}
-                title="Configure Gemini API Key"
-              >
-                🔑 {geminiKey ? 'Active' : 'Configure'}
-              </button>
-            )}
-          </div>
-
-          {showKeyConfig && parseMode === 'ai' && (
-            <div className="key-config-popover glassmorphism fade-in">
-              <h4>Gemini API Configuration</h4>
-              <p>Enter your Google AI Studio API Key to unlock image & handwritten scan parsing.</p>
-              <div className="key-input-row">
-                <input 
-                  type="password" 
-                  placeholder="AIzaSy..." 
-                  value={geminiKey}
-                  onChange={(e) => {
-                    setGeminiKey(e.target.value);
-                    localStorage.setItem('apais_gemini_key', e.target.value);
-                  }}
-                />
-                <button type="button" className="btn-close" onClick={() => setShowKeyConfig(false)}>Done</button>
-              </div>
-            </div>
-          )}
-
+        <div className="marksheet-controls-and-actions" style={{ justifyContent: 'center' }}>
           <div className="marksheet-upload-action">
             {sheetMsg && <span className="sheet-success-msg">{sheetMsg}</span>}
-            <label className="btn-secondary marksheet-upload-btn" htmlFor="marksheetInput">
-              {sheetUploading ? '⏳ Analyzing...' : '📂 Choose File'}
-            </label>
+            {import.meta.env.VITE_GEMINI_API_KEY && (
+              <label className="btn-secondary marksheet-upload-btn" htmlFor="marksheetInput">
+                {sheetUploading ? '⏳ AI Analyzing...' : '📂 Choose Marksheet'}
+              </label>
+            )}
             <input
               id="marksheetInput" type="file"
               style={{ display: 'none' }}
               onChange={handleMarksheetUpload}
               disabled={sheetUploading}
-              accept={parseMode === 'ai' ? ".csv,.txt,.xlsx,.xls,.pdf,.png,.jpg,.jpeg" : ".csv,.txt,.xlsx,.xls,.pdf"}
+              accept=".csv,.txt,.xlsx,.xls,.pdf,.png,.jpg,.jpeg"
             />
           </div>
         </div>
