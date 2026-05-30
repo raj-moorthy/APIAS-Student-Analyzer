@@ -124,9 +124,6 @@ Example output:
 				},
 			},
 		},
-		GenerationConfig: &geminiGenConfig{
-			ResponseMimeType: "application/json",
-		},
 	}
 
 	bodyJSON, err := json.Marshal(reqBody)
