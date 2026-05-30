@@ -66,6 +66,19 @@ const Settings = () => {
     const email = user?.email || '';
     if (!email) return;
 
+    // Strict 1-hour throttling check on client-side
+    const lastSent = localStorage.getItem('lastReminderSentAt');
+    const now = Date.now();
+    const oneHour = 60 * 60 * 1000;
+    if (lastSent) {
+      const elapsed = now - parseInt(lastSent, 10);
+      if (elapsed < oneHour) {
+        const remainingMinutes = Math.ceil((oneHour - elapsed) / 60000);
+        setReminderStatus(`⏳ Strictly throttled: Next digest available in ${remainingMinutes} min`);
+        return;
+      }
+    }
+
     setReminderStatus('📤 Sending hourly digest...');
     try {
       // 1. Task reminder
@@ -73,7 +86,7 @@ const Settings = () => {
       const tasks = tasksRaw ? JSON.parse(tasksRaw) : [];
       const pending = tasks.filter(t => t.status !== 'completed');
       if (pending.length) {
-        await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'}/notify/task`, {
+        const resTask = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'}/notify/task`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify({
@@ -81,6 +94,11 @@ const Settings = () => {
             tasks: pending.map(t => ({ title: t.title, subject: t.subject, dueDate: t.dueDate })),
           }),
         });
+        if (resTask.status === 429) {
+          const data = await resTask.json();
+          setReminderStatus(`⏳ ${data.error || 'Throttled: Wait 1 hour'}`);
+          return;
+        }
       }
 
       // 2. Goal update
@@ -88,7 +106,7 @@ const Settings = () => {
       const goals = goalsRaw ? JSON.parse(goalsRaw) : [];
       const activeGoals = goals.filter(g => g.progress < 100);
       if (activeGoals.length) {
-        await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'}/notify/goal`, {
+        const resGoal = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'}/notify/goal`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify({
@@ -96,17 +114,28 @@ const Settings = () => {
             goals: activeGoals.map(g => ({ title: g.title, category: g.category, progress: g.progress })),
           }),
         });
+        if (resGoal.status === 429) {
+          const data = await resGoal.json();
+          setReminderStatus(`⏳ ${data.error || 'Throttled: Wait 1 hour'}`);
+          return;
+        }
       }
 
       // 3. Resource digest
-      await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'}/notify/resources`, {
+      const resDigest = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'}/notify/resources`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ to: email, major: user?.major || 'General Study', videos: [] }),
       });
+      if (resDigest.status === 429) {
+        const data = await resDigest.json();
+        setReminderStatus(`⏳ ${data.error || 'Throttled: Wait 1 hour'}`);
+        return;
+      }
 
-      const now = new Date().toLocaleTimeString();
-      setReminderStatus(`✅ Digest sent at ${now}`);
+      localStorage.setItem('lastReminderSentAt', now.toString());
+      const nowStr = new Date().toLocaleTimeString();
+      setReminderStatus(`✅ Digest sent at ${nowStr}`);
     } catch {
       setReminderStatus('❌ Failed to send digest');
     }

@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"net/smtp"
+	"sync"
 	"time"
 
 	"github.com/thekripaverse/student-analyzer-backend/config"
@@ -253,6 +254,34 @@ func sendMailBrevo(to, subject, htmlBody, apiKey, fromUser string) error {
 // HTTP Handlers
 // ─────────────────────────────────────────────
 
+// lastEmailSentMap tracks the last sent time per recipient email address to strictly limit to once an hour.
+var lastEmailSentMap sync.Map
+
+// checkAndThrottleEmail checks if the user is within the 1-hour email sending window.
+// It returns true if throttled (and writes error response), false otherwise.
+func checkAndThrottleEmail(w http.ResponseWriter, recipient string) bool {
+	if val, ok := lastEmailSentMap.Load(recipient); ok {
+		if lastTime, okTime := val.(time.Time); okTime {
+			elapsed := time.Since(lastTime)
+			if elapsed < 1*time.Hour {
+				remaining := 1*time.Hour - elapsed
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusTooManyRequests)
+				json.NewEncoder(w).Encode(map[string]string{
+					"error": fmt.Sprintf("Strictly throttled: Please wait another %d minutes before sending another digest.", int(remaining.Minutes())),
+				})
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// markEmailSent marks that an email has been successfully sent to the recipient at the current time.
+func markEmailSent(recipient string) {
+	lastEmailSentMap.Store(recipient, time.Now())
+}
+
 // SendTaskReminderEmail — POST /api/notify/task
 func SendTaskReminderEmail(w http.ResponseWriter, r *http.Request) {
 	var body struct {
@@ -268,13 +297,17 @@ func SendTaskReminderEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if checkAndThrottleEmail(w, body.To) {
+		return
+	}
+
 	rows := ""
 	for _, t := range body.Tasks {
 		rows += fmt.Sprintf(`<tr style="border-bottom:1px solid #334155;">
   <td style="padding:10px 0;color:#e2e8f0;">%s</td>
   <td style="padding:10px;color:#a5b4fc;">%s</td>
   <td style="padding:10px;color:#f59e0b;">%s</td>
-</tr>`, t.Title, t.Subject, t.DueDate)
+ </tr>`, t.Title, t.Subject, t.DueDate)
 	}
 
 	htmlBody := fmt.Sprintf(`
@@ -296,6 +329,9 @@ func SendTaskReminderEmail(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Email send failed: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	markEmailSent(body.To)
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "sent"})
 }
@@ -315,6 +351,10 @@ func SendGoalUpdateEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if checkAndThrottleEmail(w, body.To) {
+		return
+	}
+
 	rows := ""
 	for _, g := range body.Goals {
 		bar := fmt.Sprintf(`<div style="height:8px;background:#1e293b;border-radius:4px;overflow:hidden;width:100%%;">
@@ -324,7 +364,7 @@ func SendGoalUpdateEmail(w http.ResponseWriter, r *http.Request) {
   <td style="padding:10px 0;color:#e2e8f0;">%s</td>
   <td style="padding:10px;color:#a5b4fc;">%s</td>
   <td style="padding:10px;min-width:120px;">%s<span style="color:#94a3b8;font-size:12px;">%d%%</span></td>
-</tr>`, g.Title, g.Category, bar, g.Progress)
+ </tr>`, g.Title, g.Category, bar, g.Progress)
 	}
 
 	htmlBody := fmt.Sprintf(`
@@ -346,6 +386,9 @@ func SendGoalUpdateEmail(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Email send failed: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	markEmailSent(body.To)
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "sent"})
 }
@@ -363,6 +406,10 @@ func SendResourceDigestEmail(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.To == "" {
 		http.Error(w, "Invalid payload", http.StatusBadRequest)
+		return
+	}
+
+	if checkAndThrottleEmail(w, body.To) {
 		return
 	}
 
@@ -386,6 +433,9 @@ func SendResourceDigestEmail(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Email send failed: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	markEmailSent(body.To)
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "sent"})
 }
