@@ -222,11 +222,26 @@ const Header = () => {
             </div>
 
             {/* User info badge */}
-            <div className="header-badge premium-badge">
-              <span className="header-semester">Sem {user.semester || 1}</span>
-              <span className="header-divider">•</span>
-              <span className="header-major">{user.major || 'Student'}</span>
-            </div>
+            {(() => {
+              const levelMapping = {
+                1: "LKG",
+                2: "UKG",
+                3: "Class 1-5",
+                4: "Class 6-10",
+                5: "Class 11-12",
+                6: "UG",
+                7: "PG",
+                8: "PhD"
+              };
+              const userLvl = levelMapping[user.semester] || `Sem ${user.semester || 1}`;
+              return (
+                <div className="header-badge premium-badge">
+                  <span className="header-semester">{userLvl}</span>
+                  <span className="header-divider">•</span>
+                  <span className="header-major">{user.major || 'Student'}</span>
+                </div>
+              );
+            })()}
 
             {/* Avatar with glow */}
             <div 

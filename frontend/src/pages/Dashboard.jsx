@@ -143,7 +143,24 @@ const Dashboard = () => {
           <p className="welcome-subtitle">Here is your academic overview and study track for today.</p>
         </div>
         <div className="welcome-meta-badge">
-          <span>{user.major}</span> • <span>Semester {user.semester}</span>
+          {(() => {
+            const levelMapping = {
+              1: "LKG (Lower Kindergarten)",
+              2: "UKG (Upper Kindergarten)",
+              3: "Class 1 to 5 (Primary School)",
+              4: "Class 6 to 10 (Secondary School)",
+              5: "Class 11 & 12 (Higher Secondary)",
+              6: "Undergraduate (UG / Bachelors)",
+              7: "Postgraduate (PG / Masters)",
+              8: "Doctorate (PhD / Research)"
+            };
+            const userLvl = levelMapping[user.semester] || `Semester ${user.semester}`;
+            return (
+              <>
+                <span>{user.major}</span> • <span>{userLvl}</span>
+              </>
+            );
+          })()}
         </div>
       </div>
 

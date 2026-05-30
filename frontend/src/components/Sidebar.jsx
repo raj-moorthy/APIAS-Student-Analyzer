@@ -63,10 +63,22 @@ const Sidebar = () => {
 
   const submitFeedback = async (e) => {
     if (e) e.preventDefault();
+    const levelMapping = {
+      1: "LKG",
+      2: "UKG",
+      3: "Class 1-5",
+      4: "Class 6-10",
+      5: "Class 11-12",
+      6: "UG",
+      7: "PG",
+      8: "PhD"
+    };
+    const userLvl = levelMapping[user.semester] || `Sem ${user.semester || 1}`;
+
     const newFeedback = {
       text: feedbackText.trim() || `Excellent portal! Rated APAIS ${rating} out of 5.`,
       name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || "Scholar",
-      role: `${user.major || 'Student'} Major, Sem ${user.semester || 1}`,
+      role: `${user.major || 'Student'} Major, Level: ${userLvl}`,
       avatar: `${user.firstName?.[0] || ''}${user.lastName?.[0] || user.username?.[0] || 'S'}`.toUpperCase(),
       rating
     };
